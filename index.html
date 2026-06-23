@@ -218,6 +218,41 @@
   .toast{position:fixed;bottom:20px;right:20px;background:var(--navy);color:#fff;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:500;z-index:999;opacity:0;transform:translateY(8px);transition:opacity .2s,transform .2s;pointer-events:none;display:flex;align-items:center;gap:7px;}
   .toast.show{opacity:1;transform:translateY(0);}
 
+  /* ── CATEGORY DRILL-DOWN VIEW ── */
+  .cat-view-hero{background:var(--navy);border-radius:14px;padding:1.5rem 2rem;margin-bottom:1.5rem;}
+  .cat-view-hero-top{display:flex;align-items:center;gap:12px;margin-bottom:1rem;}
+  .cat-view-back{background:none;border:none;color:var(--slate-light);cursor:pointer;font-size:13px;display:flex;align-items:center;gap:5px;padding:0;}
+  .cat-view-back:hover{color:#fff;}
+  .cat-view-name{font-size:20px;font-weight:600;color:#fff;display:flex;align-items:center;gap:10px;}
+  .cat-view-dot{width:12px;height:12px;border-radius:50%;}
+  .cat-view-group{font-size:12px;color:var(--slate-light);margin-top:2px;}
+
+  /* ── SORTABLE TABLE HEADERS ── */
+  .sortable-th{cursor:pointer;user-select:none;white-space:nowrap;}
+  .sortable-th:hover{color:var(--text-primary);}
+  .sort-arrow{display:inline-block;margin-left:4px;opacity:.4;font-size:10px;}
+  .sort-arrow.active{opacity:1;color:var(--mint);}
+
+  /* ── RUNNING BALANCE ── */
+  .txn-balance{font-family:var(--mono);font-size:12px;color:var(--text-muted);margin-top:2px;text-align:right;}
+
+  /* ── TXN TABLE (account/category views) ── */
+  .txn-table{width:100%;border-collapse:collapse;}
+  .txn-table thead th{padding:8px 14px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);border-bottom:.5px solid var(--border);text-align:left;background:var(--surface);}
+  .txn-table thead th.num{text-align:right;}
+  .txn-table tbody tr{border-bottom:.5px solid var(--border);transition:background .1s;}
+  .txn-table tbody tr:last-child{border-bottom:none;}
+  .txn-table tbody tr:hover{background:var(--surface);}
+  .txn-table tbody td{padding:9px 14px;font-size:13px;vertical-align:middle;}
+  .txn-table tbody td.num{text-align:right;font-family:var(--mono);font-size:12px;}
+  .txn-table .td-payee{font-weight:500;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .txn-table .td-cat{color:var(--text-muted);font-size:12px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .txn-table .td-acct{color:var(--text-muted);font-size:12px;}
+  .txn-table .td-memo{color:var(--text-muted);font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .txn-table .td-cleared{text-align:center;}
+  .bal-pos{color:var(--mint);}
+  .bal-neg{color:var(--coral);}
+
   ::-webkit-scrollbar{width:5px;}
   ::-webkit-scrollbar-track{background:transparent;}
   ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
@@ -370,7 +405,7 @@
         <div class="panel-header">
           <div class="panel-title"><i class="ti ti-list"></i> <span id="acct-view-txn-title">Transactions</span></div>
           <div style="display:flex;gap:8px;">
-            <input type="text" id="acct-search" placeholder="Search…" style="padding:5px 10px;border:.5px solid var(--border);border-radius:6px;font-size:12px;background:var(--surface);outline:none;width:160px;" oninput="renderAccountTxns()">
+            <input type="text" id="acct-search" placeholder="Search…" style="padding:5px 10px;border:.5px solid var(--border);border-radius:6px;font-size:12px;background:var(--surface);outline:none;width:160px;" oninput="renderAccountView(currentAcctId)">
           </div>
         </div>
         <div class="tabs">
@@ -378,7 +413,24 @@
           <button class="tab" id="atab-cleared" onclick="setAcctTab('cleared')">Cleared</button>
           <button class="tab" id="atab-uncleared" onclick="setAcctTab('uncleared')">Uncleared</button>
         </div>
-        <div class="txn-list" id="acct-txn-list" style="max-height:520px;"></div>
+        <div style="overflow-x:auto;">
+          <table class="txn-table">
+            <thead>
+              <tr>
+                <th class="sortable-th td-cleared" onclick="setAcctSort('cleared')" style="width:32px;" title="Cleared"><i class="ti ti-circle-check" style="font-size:13px;"></i><span class="sort-arrow" id="asort-cleared"></span></th>
+                <th class="sortable-th" onclick="setAcctSort('date')">Date<span class="sort-arrow active" id="asort-date">↓</span></th>
+                <th class="sortable-th" onclick="setAcctSort('payee')">Payee<span class="sort-arrow" id="asort-payee"></span></th>
+                <th>Category</th>
+                <th>Memo</th>
+                <th class="num sortable-th" onclick="setAcctSort('outflow')">Outflow<span class="sort-arrow" id="asort-outflow"></span></th>
+                <th class="num sortable-th" onclick="setAcctSort('inflow')">Inflow<span class="sort-arrow" id="asort-inflow"></span></th>
+                <th class="num sortable-th" onclick="setAcctSort('balance')">Balance<span class="sort-arrow" id="asort-balance"></span></th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="acct-txn-list"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -398,8 +450,59 @@
         <div class="txn-list" id="all-txn-list" style="max-height:620px;"></div>
       </div>
     </div>
-  </div>
-</div>
+
+    <!-- CATEGORY DRILL-DOWN VIEW -->
+    <div id="view-category" style="display:none;">
+      <div class="cat-view-hero">
+        <div class="cat-view-hero-top">
+          <button class="cat-view-back" onclick="showBudget()"><i class="ti ti-arrow-left"></i> Back to Budget</button>
+        </div>
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;">
+          <div>
+            <div class="cat-view-name"><span class="cat-view-dot" id="cat-view-dot"></span><span id="cat-view-name">Category</span></div>
+            <div class="cat-view-group" id="cat-view-group"></div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-family:var(--mono);font-size:32px;font-weight:700;color:#fff;" id="cat-view-bal">$0.00</div>
+            <div style="font-size:11px;color:var(--slate-light);margin-top:2px;">Available this month</div>
+          </div>
+        </div>
+        <div class="acct-stats" style="margin-top:1rem;">
+          <div class="acct-stat"><div class="acct-stat-label">Assigned</div><div class="acct-stat-val" id="cat-view-assigned">$0.00</div></div>
+          <div class="acct-stat"><div class="acct-stat-label">Activity</div><div class="acct-stat-val negative-val" id="cat-view-activity">$0.00</div></div>
+          <div class="acct-stat"><div class="acct-stat-label">Transactions</div><div class="acct-stat-val" id="cat-view-count">0</div></div>
+          <div class="acct-stat"><div class="acct-stat-label">Month</div>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <button class="month-nav" onclick="changeCatViewMonth(-1)" style="border:none;background:none;color:var(--slate-light);cursor:pointer;padding:0;font-size:16px;"><i class="ti ti-chevron-left"></i></button>
+              <span class="acct-stat-val" id="cat-view-month" style="font-size:12px;min-width:60px;text-align:center;"></span>
+              <button class="month-nav" onclick="changeCatViewMonth(1)" style="border:none;background:none;color:var(--slate-light);cursor:pointer;padding:0;font-size:16px;"><i class="ti ti-chevron-right"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><i class="ti ti-list"></i> Transactions</div>
+          <input type="text" id="cat-search" placeholder="Search…" style="padding:5px 10px;border:.5px solid var(--border);border-radius:6px;font-size:12px;background:var(--surface);outline:none;width:150px;" oninput="renderCategoryView()">
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="txn-table">
+            <thead>
+              <tr>
+                <th class="sortable-th td-cleared" onclick="setCatSort('cleared')" style="width:32px;" title="Cleared"><i class="ti ti-circle-check" style="font-size:13px;"></i><span class="sort-arrow" id="csort-cleared"></span></th>
+                <th class="sortable-th" onclick="setCatSort('date')">Date<span class="sort-arrow active" id="csort-date">↓</span></th>
+                <th class="sortable-th" onclick="setCatSort('payee')">Payee<span class="sort-arrow" id="csort-payee"></span></th>
+                <th>Account</th>
+                <th>Memo</th>
+                <th class="num sortable-th" onclick="setCatSort('amount')">Outflow<span class="sort-arrow" id="csort-amount"></span></th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="cat-view-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
 
 <!-- ADD CATEGORY MODAL -->
 <div class="modal-overlay" id="cat-modal">
@@ -477,6 +580,9 @@ const FILE_NAME = 'zerobudget-data.json';
 let categories=[], transactions=[], accounts=[];
 let currentMonth=new Date().toISOString().slice(0,7);
 let txnType='income', txnFilter='all', acctTab='all', currentAcctId=null;
+let currentCatId=null, catViewMonth=new Date().toISOString().slice(0,7);
+let acctSortCol='date', acctSortDir='desc';
+let catSortCol='date', catSortDir='desc';
 let accessToken=null, driveFileId=null, syncTimeout=null, lastSyncTime=null;
 let importBudgetData=null, importRegisterData=null;
 let selectedColor='#1aaa7c';
@@ -599,7 +705,7 @@ function groupCategories(){const g={};categories.forEach(c=>{const k=c.group||'U
 function formatDate(d){if(!d)return'';const[y,m,day]=d.split('-');return`${+m}/${+day}/${y}`;}
 
 // ── RENDER ALL ────────────────────────────────────────────────────
-function renderAll(){renderATB();renderCategories();renderCategorySelect();renderAccountSelect();renderSidebar();renderRecentTxns();renderAllTxns();renderMonthLabel();if(currentAcctId)renderAccountView(currentAcctId);}
+function renderAll(){renderATB();renderCategories();renderCategorySelect();renderAccountSelect();renderSidebar();renderRecentTxns();renderAllTxns();renderMonthLabel();if(currentAcctId)renderAccountView(currentAcctId);if(currentCatId&&document.getElementById('view-category').style.display!=='none')renderCategoryView();}
 
 function renderATB(){
   const{totalIncome,totalAssigned,totalActivity,atb}=calcStats();
@@ -637,7 +743,7 @@ function renderCategories(){
       html+=`<tr>
         <td><span class="cat-dot" style="background:${cat.color||'#888'}"></span><span class="cat-name">${cat.name}</span></td>
         <td><input class="assigned-edit mono" type="number" step="0.01" value="${assigned.toFixed(2)}" onchange="updateAssigned('${cat.id}',this.value)" onblur="updateAssigned('${cat.id}',this.value)"></td>
-        <td class="mono ${activity>0?'negative-val':''}">${activity>0?'-':''}${fmt(activity)}</td>
+        <td class="mono ${activity>0?'negative-val':''}" style="${activity>0?'cursor:pointer;text-decoration:underline dotted;':''}" onclick="${activity>0?`showCategoryView('${cat.id}')`:''}" title="${activity>0?'Click to see transactions':''}">${activity>0?'-':''}${fmt(activity)}</td>
         <td><span class="avail-pill ${ac}">${fmt(available)}</span></td>
         <td><div class="cat-actions"><button class="icon-btn delete" onclick="deleteCategory('${cat.id}')"><i class="ti ti-trash"></i></button></div></td>
       </tr>`;
@@ -701,13 +807,35 @@ function renderAllTxns(){
 function renderAccountView(acctId){
   const acct=accounts.find(a=>a.id===acctId);if(!acct)return;
   const q=(document.getElementById('acct-search')?.value||'').toLowerCase();
-  let list=transactions.filter(t=>t.accountId===acctId||t.toAccountId===acctId).sort((a,b)=>(b._ts||0)-(a._ts||0));
-  if(acctTab==='cleared')list=list.filter(t=>t.cleared);
-  if(acctTab==='uncleared')list=list.filter(t=>!t.cleared);
-  if(q)list=list.filter(t=>(t.payee||'').toLowerCase().includes(q)||(t.memo||'').toLowerCase().includes(q));
+
+  // All txns for this account sorted by date desc for running balance calc
+  let allForBal=transactions.filter(t=>t.accountId===acctId||t.toAccountId===acctId)
+    .filter(t=>t.date).sort((a,b)=>a.date.localeCompare(b.date)||(a._ts||0)-(b._ts||0));
+
+  // Compute running balance per txn id
+  const startBal=acct.startingBalance||0;
+  let running=startBal;
+  const balMap={};
+  allForBal.forEach(t=>{
+    const isReceiving=t.toAccountId===acctId&&t.type==='transfer';
+    if(isReceiving) running+=t.amount;
+    else if(t.type==='income') running+=t.amount;
+    else running-=t.amount;
+    balMap[t.id]=running;
+  });
+
+  // Now apply filters and sort for display
+  let list=[...allForBal];
+  if(acctTab==='cleared') list=list.filter(t=>t.cleared);
+  if(acctTab==='uncleared') list=list.filter(t=>!t.cleared);
+  if(q) list=list.filter(t=>(t.payee||'').toLowerCase().includes(q)||(t.memo||'').toLowerCase().includes(q)||getCatName(t).toLowerCase().includes(q));
+
+  list=sortTxns(list,acctSortCol,acctSortDir,'acct');
+
   const bal=acctBalance(acctId);
   const totalIn=transactions.filter(t=>t.accountId===acctId&&t.type==='income').reduce((s,t)=>s+t.amount,0)+transactions.filter(t=>t.toAccountId===acctId&&t.type==='transfer').reduce((s,t)=>s+t.amount,0);
   const totalOut=transactions.filter(t=>t.accountId===acctId&&(t.type==='expense'||t.type==='transfer')).reduce((s,t)=>s+t.amount,0);
+
   document.getElementById('acct-view-name').textContent=acct.name;
   document.getElementById('acct-view-type').textContent=ACCT_LABELS[acct.type]||acct.type;
   document.getElementById('acct-view-bal').textContent=fmt(bal);
@@ -716,7 +844,135 @@ function renderAccountView(acctId){
   document.getElementById('acct-view-out').textContent=fmt(totalOut);
   document.getElementById('acct-view-count').textContent=transactions.filter(t=>t.accountId===acctId||t.toAccountId===acctId).length;
   document.getElementById('acct-view-txn-title').textContent=acct.name+' Transactions';
-  document.getElementById('acct-txn-list').innerHTML=list.length?list.map(t=>txnHTML(t,true,acctId)).join(''):'<div class="no-data"><i class="ti ti-receipt-off"></i>No transactions.</div>';
+
+  if(!list.length){
+    document.getElementById('acct-txn-list').innerHTML=`<tr><td colspan="9"><div class="no-data"><i class="ti ti-receipt-off"></i>No transactions.</div></td></tr>`;
+    return;
+  }
+
+  document.getElementById('acct-txn-list').innerHTML=list.map(t=>{
+    const isReceiving=t.toAccountId===acctId&&t.type==='transfer';
+    const outflow=(t.type==='expense'||(t.type==='transfer'&&!isReceiving))?fmt(t.amount):'';
+    const inflow=(t.type==='income'||isReceiving)?fmt(t.amount):'';
+    const runBal=balMap[t.id];
+    const balCls=runBal==null?'':(runBal<0?'bal-neg':'bal-pos');
+    const catName=getCatName(t);
+    const clearedEl=t.cleared?'<span class="cleared-dot" title="Cleared"></span>':'<span class="uncleared-dot" title="Uncleared"></span>';
+    return`<tr>
+      <td class="td-cleared">${clearedEl}</td>
+      <td>${formatDate(t.date)}</td>
+      <td class="td-payee">${t.payee||'—'}</td>
+      <td class="td-cat">${catName}</td>
+      <td class="td-memo">${t.memo||''}</td>
+      <td class="num" style="color:var(--coral);">${outflow}</td>
+      <td class="num" style="color:var(--mint);">${inflow}</td>
+      <td class="num ${balCls}">${runBal!=null?fmt(runBal):''}</td>
+      <td><button class="icon-btn delete" onclick="deleteTxn('${t.id}')"><i class="ti ti-trash"></i></button></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── SORT HELPERS ──────────────────────────────────────────────────
+function sortTxns(list,col,dir,prefix){
+  const d=dir==='asc'?1:-1;
+  return list.sort((a,b)=>{
+    if(col==='date') return d*((a.date||'').localeCompare(b.date||''));
+    if(col==='payee') return d*(a.payee||'').localeCompare(b.payee||'');
+    if(col==='amount'||col==='outflow') return d*(a.amount-b.amount);
+    if(col==='inflow') return d*(a.amount-b.amount);
+    if(col==='balance') return d*((a._ts||0)-(b._ts||0));
+    if(col==='cleared') return d*((a.cleared?1:0)-(b.cleared?1:0));
+    return 0;
+  });
+}
+
+function setAcctSort(col){
+  if(acctSortCol===col) acctSortDir=acctSortDir==='desc'?'asc':'desc';
+  else{acctSortCol=col;acctSortDir='desc';}
+  updateSortArrows('asort',['cleared','date','payee','outflow','inflow','balance'],acctSortCol,acctSortDir);
+  if(currentAcctId)renderAccountView(currentAcctId);
+}
+
+function setCatSort(col){
+  if(catSortCol===col) catSortDir=catSortDir==='desc'?'asc':'desc';
+  else{catSortCol=col;catSortDir='desc';}
+  updateSortArrows('csort',['cleared','date','payee','amount'],catSortCol,catSortDir);
+  renderCategoryView();
+}
+
+function updateSortArrows(prefix,cols,activeCol,dir){
+  cols.forEach(c=>{
+    const el=document.getElementById(prefix+'-'+c);
+    if(!el)return;
+    if(c===activeCol){el.textContent=dir==='desc'?'↓':'↑';el.className='sort-arrow active';}
+    else{el.textContent='↕';el.className='sort-arrow';}
+  });
+}
+
+// ── CATEGORY DRILL-DOWN ───────────────────────────────────────────
+function showCategoryView(catId){
+  currentCatId=catId;
+  catViewMonth=currentMonth;
+  document.getElementById('view-budget').style.display='none';
+  document.getElementById('view-account').style.display='none';
+  document.getElementById('view-all-txns').style.display='none';
+  document.getElementById('view-category').style.display='';
+  document.getElementById('sb-budget').classList.remove('active');
+  renderCategoryView();
+}
+
+function changeCatViewMonth(delta){
+  let[y,m]=catViewMonth.split('-').map(Number);
+  m+=delta;if(m>12){m=1;y++;}if(m<1){m=12;y--;}
+  catViewMonth=`${y}-${String(m).padStart(2,'0')}`;
+  renderCategoryView();
+}
+
+function renderCategoryView(){
+  const cat=categories.find(c=>c.id===currentCatId);if(!cat)return;
+  const q=(document.getElementById('cat-search')?.value||'').toLowerCase();
+
+  const assigned=(cat.assigned||{})[catViewMonth]||0;
+  const allCatTxns=transactions.filter(t=>t.type==='expense'&&t.categoryId===currentCatId&&t.month===catViewMonth);
+  const activity=allCatTxns.reduce((s,t)=>s+t.amount,0);
+  const available=assigned-activity;
+
+  let list=[...allCatTxns];
+  if(q) list=list.filter(t=>(t.payee||'').toLowerCase().includes(q)||(t.memo||'').toLowerCase().includes(q)||getAcctName(t.accountId).toLowerCase().includes(q));
+  list=sortTxns(list,catSortCol,catSortDir,'cat');
+
+  // Month label
+  const[y,m]=catViewMonth.split('-');
+  const monthLabel=new Date(+y,+m-1,1).toLocaleDateString('en-US',{month:'short',year:'numeric'});
+
+  document.getElementById('cat-view-name').textContent=cat.name;
+  document.getElementById('cat-view-dot').style.background=cat.color||'#888';
+  document.getElementById('cat-view-group').textContent=cat.group||'';
+  document.getElementById('cat-view-bal').textContent=fmt(available);
+  document.getElementById('cat-view-bal').style.color=available<0?'var(--coral)':available===0&&assigned>0?'var(--slate-light)':'#fff';
+  document.getElementById('cat-view-assigned').textContent=fmt(assigned);
+  document.getElementById('cat-view-activity').textContent=fmt(activity);
+  document.getElementById('cat-view-count').textContent=allCatTxns.length;
+  document.getElementById('cat-view-month').textContent=monthLabel;
+
+  if(!list.length){
+    document.getElementById('cat-view-tbody').innerHTML=`<tr><td colspan="7"><div class="no-data"><i class="ti ti-receipt-off"></i>No transactions this month.</div></td></tr>`;
+    return;
+  }
+
+  document.getElementById('cat-view-tbody').innerHTML=list.map(t=>{
+    const acctName=getAcctName(t.accountId);
+    const clearedEl=t.cleared?'<span class="cleared-dot" title="Cleared"></span>':'<span class="uncleared-dot" title="Uncleared"></span>';
+    return`<tr>
+      <td class="td-cleared">${clearedEl}</td>
+      <td>${formatDate(t.date)}</td>
+      <td class="td-payee">${t.payee||'—'}</td>
+      <td class="td-acct">${acctName}</td>
+      <td class="td-memo">${t.memo||''}</td>
+      <td class="num" style="color:var(--coral);">${fmt(t.amount)}</td>
+      <td><button class="icon-btn delete" onclick="deleteTxn('${t.id}');renderCategoryView();"><i class="ti ti-trash"></i></button></td>
+    </tr>`;
+  }).join('');
 }
 
 function getCatName(t){if(t.type==='income')return'Income';if(t.type==='transfer')return`Transfer → ${getAcctName(t.toAccountId)}`;const cat=categories.find(c=>c.id===t.categoryId);return cat?cat.name:'Uncategorized';}
@@ -805,30 +1061,32 @@ function deleteCurrentAccount(){
 
 // ── VIEWS ─────────────────────────────────────────────────────────
 function showBudget(){
-  currentAcctId=null;
+  currentAcctId=null;currentCatId=null;
   document.getElementById('view-budget').style.display='';
   document.getElementById('view-account').style.display='none';
   document.getElementById('view-all-txns').style.display='none';
+  document.getElementById('view-category').style.display='none';
   document.getElementById('sb-budget').classList.add('active');
   document.querySelectorAll('#acct-list .sidebar-item').forEach(el=>el.classList.remove('active'));
 }
 
 function showAccount(id){
-  currentAcctId=id;
+  currentAcctId=id;currentCatId=null;
   document.getElementById('view-budget').style.display='none';
   document.getElementById('view-account').style.display='';
   document.getElementById('view-all-txns').style.display='none';
+  document.getElementById('view-category').style.display='none';
   document.getElementById('sb-budget').classList.remove('active');
   renderSidebar();renderAccountView(id);
-  // pre-fill account in form
   document.getElementById('txn-acct').value=id;
 }
 
 function showAllTxns(){
-  currentAcctId=null;
+  currentAcctId=null;currentCatId=null;
   document.getElementById('view-budget').style.display='none';
   document.getElementById('view-account').style.display='none';
   document.getElementById('view-all-txns').style.display='';
+  document.getElementById('view-category').style.display='none';
   renderAllTxns();
 }
 
