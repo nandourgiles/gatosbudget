@@ -168,6 +168,7 @@
   .txn-item{display:flex;align-items:center;gap:10px;padding:10px 18px;border-bottom:.5px solid var(--border);transition:background .1s;}
   .txn-item:last-child{border-bottom:none;}
   .txn-item:hover{background:var(--surface);}
+  .txn-item[onclick]:hover{background:var(--mint-light);}
   .txn-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
   .txn-icon.income{background:var(--mint-light);color:var(--mint);}
   .txn-icon.expense{background:var(--coral-light);color:var(--coral);}
@@ -404,7 +405,7 @@
           </div>
           <div class="panel">
             <div class="panel-header"><div class="panel-title"><i class="ti ti-clock"></i> Recent Transactions</div></div>
-            <div class="txn-list" id="recent-txn-list" style="max-height:320px;"><div class="no-data"><i class="ti ti-receipt-off"></i>No transactions yet.</div></div>
+            <div class="txn-list" id="recent-txn-list" style="max-height:420px;overflow-y:auto;"><div class="no-data"><i class="ti ti-receipt-off"></i>No transactions yet.</div></div>
           </div>
         </div>
       </div>
@@ -1061,8 +1062,14 @@ function toggleSidebarGroup(key){
 
 function renderRecentTxns(){
   const el=document.getElementById('recent-txn-list');
-  const list=transactions.filter(t=>t.month===currentMonth).sort((a,b)=>(b._ts||0)-(a._ts||0)).slice(0,8);
-  el.innerHTML=list.length?list.map(t=>txnHTML(t)).join(''):'<div class="no-data"><i class="ti ti-receipt-off"></i>No transactions this month.</div>';
+  // Sort by date desc, then by timestamp desc for same-day tie-breaking
+  const list=[...transactions]
+    .filter(t=>t.date)
+    .sort((a,b)=>b.date.localeCompare(a.date)||(b._ts||0)-(a._ts||0))
+    .slice(0,20);
+  el.innerHTML=list.length
+    ?list.map(t=>txnHTML(t,false,null,true)).join('')
+    :'<div class="no-data"><i class="ti ti-receipt-off"></i>No transactions yet.</div>';
 }
 
 function renderAllTxns(){
@@ -1281,17 +1288,20 @@ function renderCategoryView(){
 function getCatName(t){if(t.type==='income')return'Income';if(t.type==='transfer')return`Transfer → ${getAcctName(t.toAccountId)}`;const cat=categories.find(c=>c.id===t.categoryId);return cat?cat.name:'Uncategorized';}
 function getAcctName(id){const a=accounts.find(a=>a.id===id);return a?a.name:'';}
 
-function txnHTML(t,showDel=false,viewAcctId=null){
+function txnHTML(t,showDel=false,viewAcctId=null,clickable=false){
   const catName=getCatName(t);
   const acctName=getAcctName(t.accountId);
   let sign=t.type==='income'?'+':t.type==='transfer'?'':'-';
   let cls=t.type==='income'?'positive-val':t.type==='transfer'?'':' negative-val';
   let iconCls=t.type==='income'?'income':t.type==='transfer'?'transfer':'expense';
   let icon=t.type==='income'?'ti-arrow-down-circle':t.type==='transfer'?'ti-arrows-exchange':'ti-arrow-up-circle';
-  // For transfer viewed from the receiving account
   if(viewAcctId&&t.toAccountId===viewAcctId&&t.type==='transfer'){sign='+';cls='positive-val';iconCls='income';icon='ti-arrow-down-circle';}
   const clearedEl=t.cleared?'<span class="cleared-dot" title="Cleared"></span>':'<span class="uncleared-dot" title="Uncleared"></span>';
-  return`<div class="txn-item">
+  // Clickable row navigates to the account that owns this transaction
+  const clickHandler=clickable&&t.accountId
+    ?`onclick="jumpToTransaction('${t.id}','${t.accountId}')" style="cursor:pointer;" title="View in ${acctName||'account'}"`
+    :'';
+  return`<div class="txn-item" ${clickHandler}>
     <div class="txn-icon ${iconCls}"><i class="ti ${icon}"></i></div>
     <div class="txn-info">
       <div class="txn-payee">${t.payee||'—'}${t.memo?` <span style="color:var(--text-muted);font-size:11px;">· ${t.memo}</span>`:''}</div>
@@ -1301,8 +1311,25 @@ function txnHTML(t,showDel=false,viewAcctId=null){
       <div class="txn-amount ${cls}">${sign}${fmt(t.amount)}</div>
       <div class="txn-date">${formatDate(t.date)}</div>
     </div>
-    ${showDel?`<button class="icon-btn delete" onclick="deleteTxn('${t.id}')"><i class="ti ti-trash"></i></button>`:''}
+    ${showDel?`<button class="icon-btn delete" onclick="deleteTxn('${t.id}');event.stopPropagation();"><i class="ti ti-trash"></i></button>`:''}
+    ${clickable&&t.accountId?`<i class="ti ti-chevron-right" style="font-size:13px;color:var(--text-muted);flex-shrink:0;"></i>`:''}
   </div>`;
+}
+
+// ── JUMP TO TRANSACTION ───────────────────────────────────────────
+function jumpToTransaction(txnId, acctId){
+  // Navigate to the account register
+  showAccount(acctId);
+  setActiveNav('');
+  // After render, scroll to and highlight the row
+  setTimeout(()=>{
+    const row=document.querySelector(`tr[data-txn-id="${txnId}"]`);
+    if(!row)return;
+    row.scrollIntoView({behavior:'smooth',block:'center'});
+    row.style.transition='background .2s';
+    row.style.background='#e6f7f1';
+    setTimeout(()=>{row.style.background='';},1800);
+  },120);
 }
 
 // ── ACTIONS ───────────────────────────────────────────────────────
