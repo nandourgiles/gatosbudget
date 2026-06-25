@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ZeroBudget</title>
+<title>Gato's Budget</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.0.0/dist/tabler-icons.min.css">
 <style>
   :root {
@@ -218,6 +218,17 @@
   .toast{position:fixed;bottom:20px;right:20px;background:var(--navy);color:#fff;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:500;z-index:999;opacity:0;transform:translateY(8px);transition:opacity .2s,transform .2s;pointer-events:none;display:flex;align-items:center;gap:7px;}
   .toast.show{opacity:1;transform:translateY(0);}
 
+  /* ── FUNDING GOALS ── */
+  .goal-bar-wrap{width:100%;background:var(--border);border-radius:3px;height:5px;margin-top:4px;overflow:hidden;}
+  .goal-bar-fill{height:100%;border-radius:3px;transition:width .4s ease;}
+  .goal-label{font-size:10px;color:var(--text-muted);margin-top:2px;white-space:nowrap;}
+  .goal-badge{display:inline-flex;align-items:center;gap:3px;font-size:10px;padding:1px 6px;border-radius:3px;font-weight:600;white-space:nowrap;}
+  .goal-badge.funded{background:var(--mint-light);color:#0a6b4e;}
+  .goal-badge.partial{background:var(--amber-light);color:#7a4a05;}
+  .goal-badge.over{background:var(--coral-light);color:#b03a2b;}
+  .goal-edit-btn{background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:13px;padding:1px 3px;border-radius:3px;transition:color .15s;}
+  .goal-edit-btn:hover{color:var(--mint);}
+
   /* ── CATEGORY DRILL-DOWN VIEW ── */
   .cat-view-hero{background:var(--navy);border-radius:14px;padding:1.5rem 2rem;margin-bottom:1.5rem;}
   .cat-view-hero-top{display:flex;align-items:center;gap:12px;margin-bottom:1rem;}
@@ -261,11 +272,13 @@
 <body>
 
 <header>
-  <div class="logo"><i class="ti ti-chart-donut-4"></i> Zero<span>Budget</span></div>
+  <div class="logo"><i class="ti ti-cat"></i> Gato's<span>Budget</span></div>
   <nav>
     <button id="nav-budget" class="active"><i class="ti ti-layout-list"></i> Budget</button>
-    <button id="nav-all-txns"><i class="ti ti-receipt"></i> All Transactions</button>
+    <button id="nav-all-txns"><i class="ti ti-receipt"></i> Transactions</button>
+    <button id="nav-reports"><i class="ti ti-chart-bar"></i> Reports</button>
     <button id="nav-import" style="border:.5px solid rgba(255,255,255,.2);"><i class="ti ti-file-import"></i> Import YNAB</button>
+    <button id="nav-fresh-start" style="border:.5px solid rgba(224,83,64,.4);color:var(--coral);"><i class="ti ti-refresh"></i> Fresh Start</button>
   </nav>
 </header>
 
@@ -343,7 +356,7 @@
               </div>
             </div>
             <table class="cat-table">
-              <thead><tr><th>Category</th><th>Assigned</th><th>Activity</th><th>Available</th><th></th></tr></thead>
+              <thead><tr><th>Category</th><th>Assigned</th><th>Activity</th><th>Available</th><th>Goal</th><th></th></tr></thead>
               <tbody id="cat-tbody"></tbody>
             </table>
           </div>
@@ -471,6 +484,7 @@
           <div class="acct-stat"><div class="acct-stat-label">Assigned</div><div class="acct-stat-val" id="cat-view-assigned">$0.00</div></div>
           <div class="acct-stat"><div class="acct-stat-label">Activity</div><div class="acct-stat-val negative-val" id="cat-view-activity">$0.00</div></div>
           <div class="acct-stat"><div class="acct-stat-label">Transactions</div><div class="acct-stat-val" id="cat-view-count">0</div></div>
+          <div class="acct-stat" id="cat-view-goal" style="flex:2;"></div>
           <div class="acct-stat"><div class="acct-stat-label">Month</div>
             <div style="display:flex;align-items:center;gap:4px;">
               <button class="month-nav" onclick="changeCatViewMonth(-1)" style="border:none;background:none;color:var(--slate-light);cursor:pointer;padding:0;font-size:16px;"><i class="ti ti-chevron-left"></i></button>
@@ -504,13 +518,94 @@
       </div>
     </div>
 
-<!-- ADD CATEGORY MODAL -->
+    <!-- REPORTS VIEW -->
+    <div id="view-reports" style="display:none;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;" id="report-summary-cards"></div>
+      <div class="grid-two" style="align-items:start;">
+        <div style="display:flex;flex-direction:column;gap:1rem;">
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title"><i class="ti ti-chart-bar"></i> Spending by Category</div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <select id="report-month" style="padding:4px 8px;border:.5px solid var(--border);border-radius:6px;font-size:12px;background:var(--surface);outline:none;" onchange="renderReports()"></select>
+              </div>
+            </div>
+            <div style="padding:16px;" id="report-cat-bars"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-header"><div class="panel-title"><i class="ti ti-trending-up"></i> Monthly Income vs Spending</div></div>
+            <div style="padding:16px;" id="report-monthly-bars"></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:1rem;">
+          <div class="panel">
+            <div class="panel-header"><div class="panel-title"><i class="ti ti-list-check"></i> Top Payees</div></div>
+            <div id="report-payees" style="padding:8px 0;"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-header"><div class="panel-title"><i class="ti ti-target"></i> Goal Progress</div></div>
+            <div id="report-goals" style="padding:8px 0;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FRESH START MODAL -->
+<div class="modal-overlay" id="fresh-start-modal">
+  <div class="modal" style="width:420px;">
+    <h3 style="display:flex;align-items:center;gap:8px;color:var(--coral);"><i class="ti ti-alert-triangle"></i> Fresh Start</h3>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;line-height:1.6;">Choose what to clear. This cannot be undone — make sure you've exported or backed up anything you want to keep.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
+      <label style="display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;padding:10px 12px;border:.5px solid var(--border);border-radius:8px;">
+        <input type="checkbox" id="fs-transactions" style="width:15px;height:15px;accent-color:var(--coral);">
+        <div><div style="font-weight:500;">Clear all transactions</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Removes every income, expense, and transfer entry</div></div>
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;padding:10px 12px;border:.5px solid var(--border);border-radius:8px;">
+        <input type="checkbox" id="fs-assigned" style="width:15px;height:15px;accent-color:var(--coral);">
+        <div><div style="font-weight:500;">Clear all assigned amounts</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Resets budgeted amounts to $0 but keeps your categories</div></div>
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;padding:10px 12px;border:.5px solid var(--border);border-radius:8px;">
+        <input type="checkbox" id="fs-categories" style="width:15px;height:15px;accent-color:var(--coral);">
+        <div><div style="font-weight:500;">Clear all categories &amp; goals</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Removes all category groups, categories, and funding goals</div></div>
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;padding:10px 12px;border:.5px solid var(--border);border-radius:8px;">
+        <input type="checkbox" id="fs-accounts" style="width:15px;height:15px;accent-color:var(--coral);">
+        <div><div style="font-weight:500;">Clear all accounts</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Removes all accounts and their starting balances</div></div>
+      </label>
+    </div>
+    <div style="background:var(--coral-light);border-radius:8px;padding:10px 12px;font-size:12px;color:#b03a2b;margin-bottom:14px;display:flex;gap:8px;align-items:flex-start;">
+      <i class="ti ti-info-circle" style="flex-shrink:0;margin-top:1px;"></i>
+      <span>Your Google Drive file will be overwritten immediately. If you want a backup, download the Drive file first.</span>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeFreshStart()">Cancel</button>
+      <button style="flex:1;padding:10px;background:var(--coral);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;" onclick="runFreshStart()">Confirm &amp; Clear</button>
+    </div>
+  </div>
+</div>
 <div class="modal-overlay" id="cat-modal">
-  <div class="modal">
+  <div class="modal" style="width:400px;">
     <h3 id="modal-title">Add Category</h3>
     <div class="field"><label>Name</label><input type="text" id="new-cat-name" placeholder="e.g. Groceries"></div>
     <div class="field"><label>Group</label><input type="text" id="new-cat-group" placeholder="e.g. Living Expenses" list="group-list"><datalist id="group-list"></datalist></div>
     <div class="field"><label>Color</label><div class="color-swatches" id="color-swatches"></div></div>
+    <div style="border-top:.5px solid var(--border);margin:14px 0 12px;"></div>
+    <div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:10px;display:flex;align-items:center;gap:6px;"><i class="ti ti-target" style="color:var(--mint);"></i> Funding Goal <span style="font-weight:400;color:var(--text-muted);">(optional)</span></div>
+    <div class="field">
+      <label>Goal Type</label>
+      <select id="new-cat-goal-type" onchange="toggleGoalAmount()">
+        <option value="">No goal</option>
+        <option value="monthly">Monthly spending limit</option>
+        <option value="savings">Savings target (one-time)</option>
+        <option value="bill">Fixed bill (same amount each month)</option>
+      </select>
+    </div>
+    <div class="field" id="goal-amount-field" style="display:none;">
+      <label id="goal-amount-label">Goal amount</label>
+      <input type="number" id="new-cat-goal-amount" placeholder="0.00" min="0" step="0.01">
+    </div>
     <div class="modal-footer"><button class="btn-ghost" onclick="closeModal()">Cancel</button><button class="btn-modal-confirm" onclick="saveCategory()">Save</button></div>
   </div>
 </div>
@@ -563,6 +658,31 @@
     <div class="modal-footer">
       <button class="btn-ghost" onclick="closeImportModal()">Cancel</button>
       <button class="btn-modal-confirm" id="import-confirm-btn" onclick="runImport()" disabled style="opacity:.4;cursor:not-allowed;">Import</button>
+    </div>
+  </div>
+</div>
+
+<!-- GOAL MODAL -->
+<div class="modal-overlay" id="goal-modal">
+  <div class="modal" style="width:380px;">
+    <h3 style="display:flex;align-items:center;gap:8px;"><i class="ti ti-target" style="color:var(--mint);"></i> <span id="goal-modal-cat-name">Category</span> Goal</h3>
+    <div class="field">
+      <label>Goal Type</label>
+      <select id="goal-type" onchange="updateGoalModalLabels()">
+        <option value="">No goal (remove)</option>
+        <option value="monthly">Monthly spending limit — keep spending under this amount</option>
+        <option value="savings">Savings target — accumulate this amount over time</option>
+        <option value="bill">Fixed bill — assign exactly this amount each month</option>
+      </select>
+    </div>
+    <div class="field" id="goal-modal-amount-field">
+      <label id="goal-modal-amount-label">Goal amount</label>
+      <input type="number" id="goal-amount" placeholder="0.00" min="0" step="0.01">
+    </div>
+    <div id="goal-modal-hint" style="font-size:12px;color:var(--text-muted);background:var(--surface);border-radius:7px;padding:9px 12px;margin-bottom:4px;display:none;line-height:1.5;"></div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeGoalModal()">Cancel</button>
+      <button class="btn-modal-confirm" onclick="saveGoal()">Save Goal</button>
     </div>
   </div>
 </div>
@@ -740,11 +860,45 @@ function renderCategories(){
       const assigned=(cat.assigned||{})[currentMonth]||0;
       const activity=calcCatActivity(cat.id);const available=assigned-activity;
       const ac=available>0?'avail-pos':available<0?'avail-neg':'avail-zero';
+
+      // Goal rendering
+      let goalCell='<button class="goal-edit-btn" onclick="openGoalModal(\''+cat.id+'\')" title="Set funding goal"><i class="ti ti-target"></i></button>';
+      if(cat.goal&&cat.goal.type){
+        const goalAmt=cat.goal.amount||0;
+        let pct=0,badgeCls='partial',badgeText='',barColor='var(--amber)',goalDesc='';
+        if(cat.goal.type==='monthly'||cat.goal.type==='bill'){
+          // How much assigned vs goal
+          pct=goalAmt>0?Math.min(100,(assigned/goalAmt)*100):100;
+          const needed=Math.max(0,goalAmt-assigned);
+          if(assigned>=goalAmt){badgeCls='funded';badgeText='Funded';barColor='var(--mint)';}
+          else{badgeCls='partial';badgeText='-'+fmt(needed)+' needed';barColor='var(--amber)';}
+          goalDesc=cat.goal.type==='bill'?'Fixed bill: '+fmt(goalAmt):'Limit: '+fmt(goalAmt);
+        } else if(cat.goal.type==='savings'){
+          // Cumulative — sum all assigned across all months
+          const totalSaved=Object.values(cat.assigned||{}).reduce((s,v)=>s+(v||0),0);
+          pct=goalAmt>0?Math.min(100,(totalSaved/goalAmt)*100):100;
+          const needed=Math.max(0,goalAmt-totalSaved);
+          if(totalSaved>=goalAmt){badgeCls='funded';badgeText='Goal reached!';barColor='var(--mint)';}
+          else{badgeCls='partial';badgeText=fmt(totalSaved)+' / '+fmt(goalAmt);barColor='var(--amber)';}
+          goalDesc='Savings target: '+fmt(goalAmt);
+        }
+        if(available<0&&cat.goal.type!=='savings'){badgeCls='over';badgeText='Over budget';barColor='var(--coral)';}
+        goalCell=`<div style="min-width:110px;">
+          <div style="display:flex;align-items:center;gap:4px;">
+            <span class="goal-badge ${badgeCls}">${badgeText}</span>
+            <button class="goal-edit-btn" onclick="openGoalModal('${cat.id}')" title="Edit goal"><i class="ti ti-edit"></i></button>
+          </div>
+          <div class="goal-bar-wrap"><div class="goal-bar-fill" style="width:${pct}%;background:${barColor};"></div></div>
+          <div class="goal-label">${goalDesc}</div>
+        </div>`;
+      }
+
       html+=`<tr>
         <td><span class="cat-dot" style="background:${cat.color||'#888'}"></span><span class="cat-name">${cat.name}</span></td>
         <td><input class="assigned-edit mono" type="number" step="0.01" value="${assigned.toFixed(2)}" onchange="updateAssigned('${cat.id}',this.value)" onblur="updateAssigned('${cat.id}',this.value)"></td>
         <td class="mono ${activity>0?'negative-val':''}" style="${activity>0?'cursor:pointer;text-decoration:underline dotted;':''}" onclick="${activity>0?`showCategoryView('${cat.id}')`:''}" title="${activity>0?'Click to see transactions':''}">${activity>0?'-':''}${fmt(activity)}</td>
         <td><span class="avail-pill ${ac}">${fmt(available)}</span></td>
+        <td>${goalCell}</td>
         <td><div class="cat-actions"><button class="icon-btn delete" onclick="deleteCategory('${cat.id}')"><i class="ti ti-trash"></i></button></div></td>
       </tr>`;
     });
@@ -777,16 +931,58 @@ function renderAccountSelect(){
 function renderSidebar(){
   const el=document.getElementById('acct-list');
   if(!accounts.length){el.innerHTML='<div style="padding:6px 10px;font-size:12px;color:var(--slate);">No accounts yet</div>';return;}
-  el.innerHTML=accounts.map(a=>{
-    const bal=acctBalance(a.id);
-    const balCls=bal<0?'neg':'pos';
-    const icon=ACCT_ICONS[a.type]||'ti-wallet';
-    return`<div class="sidebar-item${currentAcctId===a.id?' active':''}" onclick="showAccount('${a.id}')">
-      <i class="ti ${icon}" style="font-size:14px;"></i>
-      <span class="acct-name">${a.name}</span>
-      <span class="acct-bal ${balCls}">${fmt(bal)}</span>
-    </div>`;
-  }).join('');
+
+  // Group accounts: cash=checking/cash/other, credit=credit/loan, investment=investment
+  const groups=[
+    {key:'cash',   label:'Cash',       types:['checking','cash','other']},
+    {key:'credit', label:'Credit',     types:['credit','loan']},
+    {key:'invest', label:'Investment', types:['investment']},
+  ];
+
+  let html='';
+  groups.forEach(g=>{
+    const accts=accounts.filter(a=>g.types.includes(a.type));
+    if(!accts.length)return;
+    const groupTotal=accts.reduce((s,a)=>s+acctBalance(a.id),0);
+    const totalCls=groupTotal<0?'neg':'pos';
+    const pillStyle=groupTotal<0
+      ?'background:#3a1a1a;color:#e05340;border-radius:4px;padding:1px 6px;font-size:11px;font-family:var(--mono);'
+      :'color:var(--slate-light);font-size:11px;font-family:var(--mono);';
+
+    html+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px 4px;cursor:pointer;"
+        onclick="toggleSidebarGroup('${g.key}')">
+      <div style="display:flex;align-items:center;gap:5px;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--slate);">
+        <i class="ti ti-chevron-down" id="sb-chevron-${g.key}" style="font-size:12px;transition:transform .2s;"></i>
+        ${g.label}
+      </div>
+      <span style="${pillStyle}">${fmt(groupTotal)}</span>
+    </div>
+    <div id="sb-group-${g.key}">`;
+
+    accts.forEach(a=>{
+      const bal=acctBalance(a.id);
+      const balCls=bal<0?'neg':'pos';
+      const icon=ACCT_ICONS[a.type]||'ti-wallet';
+      const negPill=bal<0?'style="background:#3a1a1a;color:#e05340;border-radius:4px;padding:1px 6px;"':'';
+      html+=`<div class="sidebar-item${currentAcctId===a.id?' active':''}" onclick="showAccount('${a.id}')">
+        <i class="ti ${icon}" style="font-size:13px;"></i>
+        <span class="acct-name">${a.name}</span>
+        <span class="acct-bal ${balCls}" ${negPill}>${fmt(bal)}</span>
+      </div>`;
+    });
+    html+=`</div>`;
+  });
+
+  el.innerHTML=html;
+}
+
+function toggleSidebarGroup(key){
+  const group=document.getElementById('sb-group-'+key);
+  const chevron=document.getElementById('sb-chevron-'+key);
+  if(!group)return;
+  const collapsed=group.style.display==='none';
+  group.style.display=collapsed?'':'none';
+  chevron.style.transform=collapsed?'':'rotate(-90deg)';
 }
 
 function renderRecentTxns(){
@@ -955,6 +1151,37 @@ function renderCategoryView(){
   document.getElementById('cat-view-count').textContent=allCatTxns.length;
   document.getElementById('cat-view-month').textContent=monthLabel;
 
+  // Goal progress in hero
+  const goalEl=document.getElementById('cat-view-goal');
+  if(goalEl){
+    if(cat.goal&&cat.goal.type){
+      const goalAmt=cat.goal.amount||0;
+      let pct=0,label='',barColor='var(--amber)';
+      if(cat.goal.type==='savings'){
+        const totalSaved=Object.values(cat.assigned||{}).reduce((s,v)=>s+(v||0),0);
+        pct=goalAmt>0?Math.min(100,(totalSaved/goalAmt)*100):100;
+        label=`${fmt(totalSaved)} saved of ${fmt(goalAmt)} target (${Math.round(pct)}%)`;
+        barColor=totalSaved>=goalAmt?'var(--mint)':'var(--amber)';
+      } else {
+        pct=goalAmt>0?Math.min(100,(assigned/goalAmt)*100):100;
+        const typeLabel=cat.goal.type==='bill'?'Fixed bill':'Limit';
+        label=`${fmt(assigned)} assigned of ${fmt(goalAmt)} ${typeLabel.toLowerCase()} (${Math.round(pct)}%)`;
+        barColor=assigned>=goalAmt?'var(--mint)':available<0?'var(--coral)':'var(--amber)';
+      }
+      goalEl.innerHTML=`<div class="acct-stat-label">Goal Progress</div>
+        <div style="margin-top:4px;">
+          <div style="background:rgba(255,255,255,.15);border-radius:3px;height:6px;overflow:hidden;">
+            <div style="width:${pct}%;height:100%;background:${barColor};border-radius:3px;transition:width .4s;"></div>
+          </div>
+          <div style="font-size:10px;color:var(--slate-light);margin-top:3px;">${label}</div>
+        </div>`;
+      goalEl.style.display='';
+    } else {
+      goalEl.innerHTML=`<div class="acct-stat-label">Goal</div><div style="font-size:11px;color:var(--slate-light);margin-top:4px;cursor:pointer;" onclick="openGoalModal('${cat.id}')"><i class="ti ti-target"></i> Set a goal</div>`;
+      goalEl.style.display='';
+    }
+  }
+
   if(!list.length){
     document.getElementById('cat-view-tbody').innerHTML=`<tr><td colspan="7"><div class="no-data"><i class="ti ti-receipt-off"></i>No transactions this month.</div></td></tr>`;
     return;
@@ -1062,20 +1289,18 @@ function deleteCurrentAccount(){
 // ── VIEWS ─────────────────────────────────────────────────────────
 function showBudget(){
   currentAcctId=null;currentCatId=null;
-  document.getElementById('view-budget').style.display='';
-  document.getElementById('view-account').style.display='none';
-  document.getElementById('view-all-txns').style.display='none';
-  document.getElementById('view-category').style.display='none';
+  ['view-budget','view-account','view-all-txns','view-category','view-reports'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.style.display=id==='view-budget'?'':'none';
+  });
   document.getElementById('sb-budget').classList.add('active');
   document.querySelectorAll('#acct-list .sidebar-item').forEach(el=>el.classList.remove('active'));
 }
 
 function showAccount(id){
   currentAcctId=id;currentCatId=null;
-  document.getElementById('view-budget').style.display='none';
-  document.getElementById('view-account').style.display='';
-  document.getElementById('view-all-txns').style.display='none';
-  document.getElementById('view-category').style.display='none';
+  ['view-budget','view-account','view-all-txns','view-category','view-reports'].forEach(vid=>{
+    const el=document.getElementById(vid);if(el)el.style.display=vid==='view-account'?'':'none';
+  });
   document.getElementById('sb-budget').classList.remove('active');
   renderSidebar();renderAccountView(id);
   document.getElementById('txn-acct').value=id;
@@ -1083,10 +1308,9 @@ function showAccount(id){
 
 function showAllTxns(){
   currentAcctId=null;currentCatId=null;
-  document.getElementById('view-budget').style.display='none';
-  document.getElementById('view-account').style.display='none';
-  document.getElementById('view-all-txns').style.display='';
-  document.getElementById('view-category').style.display='none';
+  ['view-budget','view-account','view-all-txns','view-category','view-reports'].forEach(vid=>{
+    const el=document.getElementById(vid);if(el)el.style.display=vid==='view-all-txns'?'':'none';
+  });
   renderAllTxns();
 }
 
@@ -1120,9 +1344,22 @@ function saveAccount(){
 }
 
 // ── CATEGORIES ────────────────────────────────────────────────────
+function toggleGoalAmount(){
+  const type=document.getElementById('new-cat-goal-type').value;
+  const show=type!=='';
+  document.getElementById('goal-amount-field').style.display=show?'':'none';
+  if(show){
+    const labels={monthly:'Monthly spending limit ($)',savings:'Total savings target ($)',bill:'Fixed bill amount ($)'};
+    document.getElementById('goal-amount-label').textContent=labels[type]||'Goal amount';
+  }
+}
+
 function openAddCatModal(){
   document.getElementById('modal-title').textContent='Add Category';
   document.getElementById('new-cat-name').value='';document.getElementById('new-cat-group').value='';
+  document.getElementById('new-cat-goal-type').value='';
+  document.getElementById('new-cat-goal-amount').value='';
+  document.getElementById('goal-amount-field').style.display='none';
   selectedColor=COLORS[0];renderSwatches();
   document.getElementById('cat-modal').classList.add('open');
   setTimeout(()=>document.getElementById('new-cat-name').focus(),50);
@@ -1134,8 +1371,50 @@ function saveCategory(){
   const name=document.getElementById('new-cat-name').value.trim();
   const group=document.getElementById('new-cat-group').value.trim()||'Uncategorized';
   if(!name){toast('Enter category name','error');return;}
-  categories.push({id:uid(),name,group,color:selectedColor,assigned:{}});
+  const goalType=document.getElementById('new-cat-goal-type').value;
+  const goalAmount=parseFloat(document.getElementById('new-cat-goal-amount').value)||0;
+  const goal=goalType?{type:goalType,amount:goalAmount}:null;
+  categories.push({id:uid(),name,group,color:selectedColor,assigned:{},goal});
   closeModal();renderAll();scheduleSave();toast('Category added');
+}
+
+// ── GOAL MODAL ────────────────────────────────────────────────────
+let goalTargetCatId=null;
+function openGoalModal(catId){
+  goalTargetCatId=catId;
+  const cat=categories.find(c=>c.id===catId);if(!cat)return;
+  document.getElementById('goal-modal-cat-name').textContent=cat.name;
+  document.getElementById('goal-type').value=cat.goal?.type||'';
+  document.getElementById('goal-amount').value=cat.goal?.amount||'';
+  updateGoalModalLabels();
+  document.getElementById('goal-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('goal-amount').focus(),50);
+}
+function closeGoalModal(){document.getElementById('goal-modal').classList.remove('open');}
+
+function updateGoalModalLabels(){
+  const type=document.getElementById('goal-type').value;
+  const amountField=document.getElementById('goal-modal-amount-field');
+  const hint=document.getElementById('goal-modal-hint');
+  if(!type){amountField.style.display='none';hint.style.display='none';return;}
+  amountField.style.display='';hint.style.display='';
+  const labels={monthly:'Monthly spending limit ($)',savings:'Total savings target ($)',bill:'Fixed bill amount ($)'};
+  const hints={
+    monthly:'The progress bar fills as you assign money. A warning shows if you go over.',
+    savings:'Tracks total assigned across all months until you hit your target — great for emergency funds or big purchases.',
+    bill:'Shows "Funded" once you\'ve assigned the exact bill amount for the month.'
+  };
+  document.getElementById('goal-modal-amount-label').textContent=labels[type]||'Goal amount';
+  hint.textContent=hints[type]||'';
+}
+
+function saveGoal(){
+  const cat=categories.find(c=>c.id===goalTargetCatId);if(!cat)return;
+  const type=document.getElementById('goal-type').value;
+  const amount=parseFloat(document.getElementById('goal-amount').value)||0;
+  if(type&&amount<=0){toast('Enter a goal amount greater than 0','error');return;}
+  cat.goal=type?{type,amount}:null;
+  closeGoalModal();renderAll();scheduleSave();toast(type?'Goal saved':'Goal removed');
 }
 
 // ── TOAST ─────────────────────────────────────────────────────────
@@ -1278,7 +1557,7 @@ function guessAcctType(name){
   const n=name.toLowerCase();
   if(n.includes('visa')||n.includes('mastercard')||n.includes('amex')||n.includes('credit'))return'credit';
   if(n.includes('line of credit')||n.includes('loan')||n.includes('mortgage'))return'loan';
-  if(n.includes('resp')||n.includes('tfsa')||n.includes('rrsp')||n.includes('wealth')||n.includes('invest')||n.includes('stock'))return'investment';
+  if(n.includes('resp')||n.includes('tfsa')||n.includes('rrsp')||n.includes('wealth')||n.includes('invest')||n.includes('stock')||n.includes('manulife')||n.includes('sunlife')||n.includes('fidelity')||n.includes('etf')||n.includes('portfolio'))return'investment';
   if(n.includes('cash')||n.includes('envelope'))return'cash';
   return'checking';
 }
@@ -1294,16 +1573,205 @@ function hashStr(s){let h=0;for(let i=0;i<s.length;i++)h=(Math.imul(31,h)+s.char
   el.addEventListener('drop',e=>{e.preventDefault();const file=e.dataTransfer.files[0];if(!file)return;const inp=el.querySelector('input[type=file]');const dt=new DataTransfer();dt.items.add(file);inp.files=dt.files;id==='budget-drop'?handleBudgetFile(inp):handleRegisterFile(inp);});
 });
 
+// ── REPORTS ───────────────────────────────────────────────────────
+function showReports(){
+  currentAcctId=null;currentCatId=null;
+  ['view-budget','view-account','view-all-txns','view-category'].forEach(id=>document.getElementById(id).style.display='none');
+  document.getElementById('view-reports').style.display='';
+  document.getElementById('sb-budget').classList.remove('active');
+  populateReportMonthSelect();
+  renderReports();
+}
+
+function populateReportMonthSelect(){
+  const sel=document.getElementById('report-month');
+  const months=[...new Set(transactions.map(t=>t.month).filter(Boolean))].sort().reverse();
+  if(!months.includes(currentMonth))months.unshift(currentMonth);
+  sel.innerHTML=months.map(m=>{
+    const[y,mo]=m.split('-');
+    const label=new Date(+y,+mo-1,1).toLocaleDateString('en-US',{month:'long',year:'numeric'});
+    return`<option value="${m}"${m===currentMonth?' selected':''}>${label}</option>`;
+  }).join('');
+}
+
+function renderReports(){
+  const sel=document.getElementById('report-month');
+  const month=sel?sel.value:currentMonth;
+  const mTxns=transactions.filter(t=>t.month===month);
+  const income=mTxns.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const spending=mTxns.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  const assigned=categories.reduce((s,c)=>s+((c.assigned||{})[month]||0),0);
+  const net=income-spending;
+
+  // Summary cards
+  document.getElementById('report-summary-cards').innerHTML=`
+    <div class="panel" style="padding:16px;">
+      <div style="font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Income</div>
+      <div style="font-family:var(--mono);font-size:28px;font-weight:700;color:var(--mint);">${fmt(income)}</div>
+    </div>
+    <div class="panel" style="padding:16px;">
+      <div style="font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Spending</div>
+      <div style="font-family:var(--mono);font-size:28px;font-weight:700;color:var(--coral);">${fmt(spending)}</div>
+    </div>
+    <div class="panel" style="padding:16px;">
+      <div style="font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Net</div>
+      <div style="font-family:var(--mono);font-size:28px;font-weight:700;color:${net>=0?'var(--mint)':'var(--coral)'};">${fmt(net)}</div>
+    </div>
+    <div class="panel" style="padding:16px;">
+      <div style="font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Assigned</div>
+      <div style="font-family:var(--mono);font-size:28px;font-weight:700;color:var(--text-primary);">${fmt(assigned)}</div>
+    </div>`;
+
+  // Spending by category bars
+  const catSpend=[];
+  categories.forEach(cat=>{
+    const amt=mTxns.filter(t=>t.type==='expense'&&t.categoryId===cat.id).reduce((s,t)=>s+t.amount,0);
+    if(amt>0)catSpend.push({cat,amt});
+  });
+  catSpend.sort((a,b)=>b.amt-a.amt);
+  const maxSpend=catSpend[0]?.amt||1;
+  document.getElementById('report-cat-bars').innerHTML=catSpend.length?catSpend.map(({cat,amt})=>{
+    const pct=(amt/maxSpend)*100;
+    const budgeted=(cat.assigned||{})[month]||0;
+    const overBudget=budgeted>0&&amt>budgeted;
+    return`<div style="margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500;">
+          <span style="width:7px;height:7px;border-radius:50%;background:${cat.color||'#888'};flex-shrink:0;display:inline-block;"></span>${cat.name}
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          ${budgeted>0?`<span style="font-size:11px;color:var(--text-muted);">of ${fmt(budgeted)}</span>`:''}
+          <span style="font-family:var(--mono);font-size:12px;font-weight:600;color:${overBudget?'var(--coral)':'var(--text-primary)'};">${fmt(amt)}</span>
+        </div>
+      </div>
+      <div style="background:var(--border);border-radius:3px;height:6px;overflow:hidden;">
+        <div style="width:${pct}%;height:100%;background:${overBudget?'var(--coral)':cat.color||'var(--mint)'};border-radius:3px;"></div>
+      </div>
+      ${budgeted>0?`<div style="background:var(--border);border-radius:3px;height:2px;overflow:hidden;margin-top:1px;"><div style="width:${Math.min(100,(budgeted/maxSpend)*100)}%;height:100%;background:var(--slate-light);border-radius:3px;opacity:.5;"></div></div>`:''}
+    </div>`;
+  }).join(''):'<div class="no-data"><i class="ti ti-chart-bar"></i>No spending this month.</div>';
+
+  // Monthly income vs spending (last 6 months)
+  const last6=[...Array(6)].map((_,i)=>{
+    let[y,m]=currentMonth.split('-').map(Number);
+    m-=i;if(m<1){m+=12;y--;}
+    const mo=`${y}-${String(m).padStart(2,'0')}`;
+    const moTxns=transactions.filter(t=>t.month===mo);
+    const inc=moTxns.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+    const spd=moTxns.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+    const[yr,mn]=mo.split('-');
+    const label=new Date(+yr,+mn-1,1).toLocaleDateString('en-US',{month:'short'});
+    return{mo,label,inc,spd};
+  }).reverse();
+  const maxBar=Math.max(...last6.map(r=>Math.max(r.inc,r.spd)),1);
+  document.getElementById('report-monthly-bars').innerHTML=`
+    <div style="display:flex;align-items:flex-end;gap:8px;height:120px;">
+      ${last6.map(r=>`
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;height:100%;justify-content:flex-end;">
+          <div style="display:flex;gap:2px;align-items:flex-end;width:100%;">
+            <div style="flex:1;background:var(--mint);border-radius:3px 3px 0 0;height:${Math.max(2,(r.inc/maxBar)*100)}px;opacity:.85;" title="Income: ${fmt(r.inc)}"></div>
+            <div style="flex:1;background:var(--coral);border-radius:3px 3px 0 0;height:${Math.max(2,(r.spd/maxBar)*100)}px;opacity:.85;" title="Spending: ${fmt(r.spd)}"></div>
+          </div>
+          <div style="font-size:10px;color:var(--text-muted);${r.mo===currentMonth?'font-weight:600;color:var(--text-primary);':''}">${r.label}</div>
+        </div>`).join('')}
+    </div>
+    <div style="display:flex;gap:14px;margin-top:10px;font-size:11px;color:var(--text-muted);">
+      <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:var(--mint);display:inline-block;"></span>Income</span>
+      <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:var(--coral);display:inline-block;"></span>Spending</span>
+    </div>`;
+
+  // Top payees
+  const payeeMap={};
+  mTxns.filter(t=>t.type==='expense').forEach(t=>{
+    const k=t.payee||'Unknown';
+    if(!payeeMap[k])payeeMap[k]=0;
+    payeeMap[k]+=t.amount;
+  });
+  const topPayees=Object.entries(payeeMap).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const maxP=topPayees[0]?.[1]||1;
+  document.getElementById('report-payees').innerHTML=topPayees.length?topPayees.map(([name,amt],i)=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 16px;border-bottom:.5px solid var(--border);">
+      <div style="font-size:11px;color:var(--text-muted);width:16px;text-align:right;">${i+1}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${name}</div>
+        <div style="background:var(--border);border-radius:2px;height:3px;margin-top:4px;overflow:hidden;"><div style="width:${(amt/maxP)*100}%;height:100%;background:var(--coral);border-radius:2px;"></div></div>
+      </div>
+      <div style="font-family:var(--mono);font-size:12px;font-weight:600;color:var(--coral);flex-shrink:0;">${fmt(amt)}</div>
+    </div>`).join(''):'<div class="no-data"><i class="ti ti-users"></i>No expenses this month.</div>';
+
+  // Goal progress summary
+  const goalCats=categories.filter(c=>c.goal&&c.goal.type);
+  document.getElementById('report-goals').innerHTML=goalCats.length?goalCats.map(cat=>{
+    const goalAmt=cat.goal.amount||0;
+    let pct=0,label='',barColor='var(--amber)',statusText='';
+    if(cat.goal.type==='savings'){
+      const totalSaved=Object.values(cat.assigned||{}).reduce((s,v)=>s+(v||0),0);
+      pct=goalAmt>0?Math.min(100,(totalSaved/goalAmt)*100):100;
+      label=`${fmt(totalSaved)} of ${fmt(goalAmt)}`;
+      barColor=totalSaved>=goalAmt?'var(--mint)':'var(--amber)';
+      statusText=totalSaved>=goalAmt?'Reached!':Math.round(pct)+'%';
+    } else {
+      const a=(cat.assigned||{})[month]||0;
+      pct=goalAmt>0?Math.min(100,(a/goalAmt)*100):100;
+      label=`${fmt(a)} of ${fmt(goalAmt)}`;
+      barColor=a>=goalAmt?'var(--mint)':a>goalAmt?'var(--coral)':'var(--amber)';
+      statusText=a>=goalAmt?'Funded':Math.round(pct)+'%';
+    }
+    return`<div style="padding:10px 16px;border-bottom:.5px solid var(--border);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500;">
+          <span style="width:7px;height:7px;border-radius:50%;background:${cat.color||'#888'};display:inline-block;"></span>${cat.name}
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:11px;color:var(--text-muted);">${label}</span>
+          <span style="font-size:11px;font-weight:600;color:${barColor};">${statusText}</span>
+        </div>
+      </div>
+      <div style="background:var(--border);border-radius:3px;height:5px;overflow:hidden;">
+        <div style="width:${pct}%;height:100%;background:${barColor};border-radius:3px;transition:width .4s;"></div>
+      </div>
+    </div>`;
+  }).join(''):'<div class="no-data"><i class="ti ti-target"></i>No goals set yet.</div>';
+}
+
+// ── FRESH START ───────────────────────────────────────────────────
+function openFreshStart(){document.getElementById('fresh-start-modal').classList.add('open');}
+function closeFreshStart(){document.getElementById('fresh-start-modal').classList.remove('open');}
+async function runFreshStart(){
+  const doTxns=document.getElementById('fs-transactions').checked;
+  const doAssigned=document.getElementById('fs-assigned').checked;
+  const doCats=document.getElementById('fs-categories').checked;
+  const doAccts=document.getElementById('fs-accounts').checked;
+  if(!doTxns&&!doAssigned&&!doCats&&!doAccts){toast('Select at least one option','error');return;}
+  if(!confirm('Are you sure? This cannot be undone.'))return;
+  if(doTxns)transactions=[];
+  if(doAssigned)categories.forEach(c=>c.assigned={});
+  if(doCats){categories=[];transactions=transactions.map(t=>({...t,categoryId:null}));}
+  if(doAccts){accounts=[];transactions=transactions.map(t=>({...t,accountId:null,toAccountId:null}));}
+  closeFreshStart();showBudget();renderAll();scheduleSave();
+  toast('Fresh start complete');
+}
+
 // ── WIRE UP ───────────────────────────────────────────────────────
-document.getElementById('nav-budget').addEventListener('click',()=>{showBudget();document.getElementById('nav-budget').classList.add('active');document.getElementById('nav-all-txns').classList.remove('active');});
-document.getElementById('nav-all-txns').addEventListener('click',()=>{showAllTxns();document.getElementById('nav-all-txns').classList.add('active');document.getElementById('nav-budget').classList.remove('active');});
+function setActiveNav(id){
+  ['nav-budget','nav-all-txns','nav-reports'].forEach(n=>{
+    const el=document.getElementById(n);if(el)el.classList.remove('active');
+  });
+  const el=document.getElementById(id);if(el)el.classList.add('active');
+}
+document.getElementById('nav-budget').addEventListener('click',()=>{showBudget();setActiveNav('nav-budget');});
+document.getElementById('nav-all-txns').addEventListener('click',()=>{showAllTxns();setActiveNav('nav-all-txns');});
+document.getElementById('nav-reports').addEventListener('click',()=>{showReports();setActiveNav('nav-reports');});
 document.getElementById('nav-import').addEventListener('click',openImportModal);
+document.getElementById('nav-fresh-start').addEventListener('click',openFreshStart);
+document.getElementById('fresh-start-modal').addEventListener('click',e=>{if(e.target===document.getElementById('fresh-start-modal'))closeFreshStart();});
 document.getElementById('prev-month').addEventListener('click',()=>changeMonth(-1));
 document.getElementById('next-month').addEventListener('click',()=>changeMonth(1));
 document.getElementById('add-cat-btn').addEventListener('click',openAddCatModal);
 document.getElementById('cat-modal').addEventListener('click',e=>{if(e.target===document.getElementById('cat-modal'))closeModal();});
 document.getElementById('acct-modal').addEventListener('click',e=>{if(e.target===document.getElementById('acct-modal'))closeAcctModal();});
 document.getElementById('import-modal').addEventListener('click',e=>{if(e.target===document.getElementById('import-modal'))closeImportModal();});
+document.getElementById('goal-modal').addEventListener('click',e=>{if(e.target===document.getElementById('goal-modal'))closeGoalModal();});
 
 document.getElementById('txn-date').value=new Date().toISOString().slice(0,10);
 setType('income');
