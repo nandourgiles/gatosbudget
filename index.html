@@ -295,6 +295,7 @@
     <button id="nav-all-txns"><i class="ti ti-receipt"></i> Transactions</button>
     <button id="nav-reports"><i class="ti ti-chart-bar"></i> Reports</button>
     <button id="nav-import" style="border:.5px solid rgba(255,255,255,.2);"><i class="ti ti-file-import"></i> Import YNAB</button>
+    <button id="nav-export" style="border:.5px solid rgba(255,255,255,.2);"><i class="ti ti-file-export"></i> Export</button>
     <button id="nav-fresh-start" style="border:.5px solid rgba(224,83,64,.4);color:var(--coral);"><i class="ti ti-refresh"></i> Fresh Start</button>
   </nav>
 </header>
@@ -426,7 +427,8 @@
           <div class="acct-stat"><div class="acct-stat-label">Inflow</div><div class="acct-stat-val positive-val" id="acct-view-in">$0.00</div></div>
           <div class="acct-stat"><div class="acct-stat-label">Outflow</div><div class="acct-stat-val negative-val" id="acct-view-out">$0.00</div></div>
           <div class="acct-stat"><div class="acct-stat-label">Transactions</div><div class="acct-stat-val" id="acct-view-count">0</div></div>
-          <div class="acct-stat" style="display:flex;align-items:center;justify-content:center;">
+          <div class="acct-stat" style="display:flex;align-items:center;justify-content:center;gap:8px;">
+            <button class="btn-sm mint" onclick="openEditAcctModal()"><i class="ti ti-edit"></i> Edit</button>
             <button class="btn-sm coral" onclick="deleteCurrentAccount()"><i class="ti ti-trash"></i> Delete</button>
           </div>
         </div>
@@ -647,7 +649,30 @@
   </div>
 </div>
 
-<!-- YNAB IMPORT MODAL -->
+<!-- EDIT ACCOUNT MODAL -->
+<div class="modal-overlay" id="edit-acct-modal">
+  <div class="modal">
+    <h3 style="display:flex;align-items:center;gap:8px;"><i class="ti ti-edit" style="color:var(--mint);"></i> Edit Account</h3>
+    <div class="field"><label>Account Name</label><input type="text" id="edit-acct-name" placeholder="e.g. CIBC Mutual"></div>
+    <div class="field"><label>Account Type</label>
+      <select id="edit-acct-type">
+        <option value="checking">Checking / Savings</option>
+        <option value="credit">Credit Card</option>
+        <option value="loan">Loan / Line of Credit</option>
+        <option value="investment">Investment</option>
+        <option value="cash">Cash</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+    <div class="field"><label>Starting Balance</label><input type="number" id="edit-acct-starting-bal" placeholder="0.00" step="0.01">
+      <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">This is the balance before your first transaction — not the current balance.</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeEditAcctModal()">Cancel</button>
+      <button class="btn-modal-confirm" onclick="saveEditAcct()">Save Changes</button>
+    </div>
+  </div>
+</div>
 <div class="modal-overlay" id="import-modal">
   <div class="modal" style="width:520px;max-width:95vw;">
     <h3 style="display:flex;align-items:center;gap:8px;"><i class="ti ti-file-import" style="color:var(--mint)"></i> Import from YNAB</h3>
@@ -675,6 +700,38 @@
     <div class="modal-footer">
       <button class="btn-ghost" onclick="closeImportModal()">Cancel</button>
       <button class="btn-modal-confirm" id="import-confirm-btn" onclick="runImport()" disabled style="opacity:.4;cursor:not-allowed;">Import</button>
+    </div>
+  </div>
+</div>
+
+<!-- EXPORT MODAL -->
+<div class="modal-overlay" id="export-modal">
+  <div class="modal" style="width:440px;">
+    <h3 style="display:flex;align-items:center;gap:8px;"><i class="ti ti-file-export" style="color:var(--mint);"></i> Export Data</h3>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;line-height:1.6;">Choose what to export and the file format. Files download directly to your device.</p>
+    <div class="field"><label>What to export</label>
+      <select id="export-what" onchange="updateExportPreview()">
+        <option value="transactions">All transactions</option>
+        <option value="transactions-month">Transactions — current month only</option>
+        <option value="budget">Budget (categories + assigned amounts)</option>
+        <option value="accounts">Account balances</option>
+        <option value="full">Everything (transactions + budget + accounts)</option>
+      </select>
+    </div>
+    <div class="field"><label>File format</label>
+      <div style="display:flex;gap:8px;">
+        <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 12px;border:.5px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px;">
+          <input type="radio" name="export-fmt" id="fmt-csv" value="csv" checked onchange="updateExportPreview()" style="accent-color:var(--mint);"> <i class="ti ti-file-text" style="color:var(--mint);"></i> CSV <span style="font-size:11px;color:var(--text-muted);">Opens in any app</span>
+        </label>
+        <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 12px;border:.5px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px;">
+          <input type="radio" name="export-fmt" id="fmt-xlsx" value="xlsx" onchange="updateExportPreview()" style="accent-color:var(--mint);"> <i class="ti ti-file-spreadsheet" style="color:#217346;"></i> Excel <span style="font-size:11px;color:var(--text-muted);">.xlsx format</span>
+        </label>
+      </div>
+    </div>
+    <div id="export-preview" style="background:var(--surface);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--text-secondary);margin-bottom:4px;line-height:1.6;"></div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeExportModal()">Cancel</button>
+      <button class="btn-modal-confirm" onclick="runExport()" style="display:flex;align-items:center;justify-content:center;gap:6px;"><i class="ti ti-download"></i> Download</button>
     </div>
   </div>
 </div>
@@ -1905,6 +1962,186 @@ function catDrop(e){
   renderCategories();
   scheduleSave();
 }
+// ── EDIT ACCOUNT ──────────────────────────────────────────────────
+function openEditAcctModal(){
+  const acct=accounts.find(a=>a.id===currentAcctId);if(!acct)return;
+  document.getElementById('edit-acct-name').value=acct.name;
+  document.getElementById('edit-acct-type').value=acct.type||'checking';
+  document.getElementById('edit-acct-starting-bal').value=(acct.startingBalance||0).toFixed(2);
+  document.getElementById('edit-acct-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('edit-acct-name').focus(),50);
+}
+function closeEditAcctModal(){document.getElementById('edit-acct-modal').classList.remove('open');}
+function saveEditAcct(){
+  const acct=accounts.find(a=>a.id===currentAcctId);if(!acct)return;
+  const name=document.getElementById('edit-acct-name').value.trim();
+  if(!name){toast('Enter an account name','error');return;}
+  acct.name=name;
+  acct.type=document.getElementById('edit-acct-type').value;
+  acct.startingBalance=parseFloat(document.getElementById('edit-acct-starting-bal').value)||0;
+  closeEditAcctModal();
+  renderAll();
+  scheduleSave();
+  toast('Account updated');
+}
+
+// ── EXPORT ────────────────────────────────────────────────────────
+function openExportModal(){
+  document.getElementById('export-modal').classList.add('open');
+  updateExportPreview();
+}
+function closeExportModal(){document.getElementById('export-modal').classList.remove('open');}
+
+function updateExportPreview(){
+  const what=document.getElementById('export-what').value;
+  const fmt=document.querySelector('input[name="export-fmt"]:checked').value;
+  const previews={
+    'transactions':`${transactions.length} transactions, columns: Date, Payee, Type, Category, Account, Memo, Amount, Cleared`,
+    'transactions-month':`${transactions.filter(t=>t.month===currentMonth).length} transactions for ${currentMonth}, same columns as above`,
+    'budget':`${categories.length} categories with group, goal type, goal amount, and assigned amounts for each month`,
+    'accounts':`${accounts.length} accounts with type, starting balance, and current balance`,
+    'full':`3 sheets — Transactions (${transactions.length} rows), Budget (${categories.length} rows), Accounts (${accounts.length} rows)`,
+  };
+  document.getElementById('export-preview').innerHTML=`<strong>Preview:</strong> ${previews[what]||''} &nbsp;·&nbsp; <strong>Format:</strong> .${fmt}`;
+}
+
+function runExport(){
+  const what=document.getElementById('export-what').value;
+  const fmt=document.querySelector('input[name="export-fmt"]:checked').value;
+  const[y,m]=currentMonth.split('-');
+  const monthLabel=new Date(+y,+m-1,1).toLocaleDateString('en-US',{month:'short',year:'numeric'}).replace(' ','-');
+
+  if(fmt==='csv'){
+    let csv='', filename='';
+    if(what==='transactions'||what==='transactions-month'){
+      const rows=what==='transactions-month'?transactions.filter(t=>t.month===currentMonth):transactions;
+      csv=buildCSV(['Date','Payee','Type','Category Group','Category','Account','Memo','Outflow','Inflow','Cleared'],
+        rows.sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(t=>{
+          const cat=categories.find(c=>c.id===t.categoryId);
+          return[t.date||'',t.payee||'',t.type,cat?.group||'',cat?.name||'',getAcctName(t.accountId),t.memo||'',
+            t.type==='expense'?t.amount.toFixed(2):'',t.type==='income'?t.amount.toFixed(2):'',t.cleared?'Cleared':'Uncleared'];
+        }));
+      filename=what==='transactions-month'?`gatos-budget-transactions-${monthLabel}.csv`:'gatos-budget-transactions.csv';
+    } else if(what==='budget'){
+      const rows=[];
+      categories.forEach(cat=>{
+        const months=[...new Set([...Object.keys(cat.assigned||{}),currentMonth])].sort();
+        months.forEach(mo=>{
+          rows.push([cat.group||'',cat.name,cat.goal?.type||'',cat.goal?.amount||'',mo,(cat.assigned||{})[mo]||0]);
+        });
+      });
+      csv=buildCSV(['Group','Category','Goal Type','Goal Amount','Month','Assigned'],rows);
+      filename='gatos-budget-categories.csv';
+    } else if(what==='accounts'){
+      csv=buildCSV(['Account','Type','Starting Balance','Current Balance'],
+        accounts.map(a=>[a.name,ACCT_LABELS[a.type]||a.type,(a.startingBalance||0).toFixed(2),acctBalance(a.id).toFixed(2)]));
+      filename='gatos-budget-accounts.csv';
+    } else if(what==='full'){
+      // Full = transactions CSV (most useful single file)
+      csv=buildCSV(['Date','Payee','Type','Category Group','Category','Account','Memo','Outflow','Inflow','Cleared'],
+        transactions.sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(t=>{
+          const cat=categories.find(c=>c.id===t.categoryId);
+          return[t.date||'',t.payee||'',t.type,cat?.group||'',cat?.name||'',getAcctName(t.accountId),t.memo||'',
+            t.type==='expense'?t.amount.toFixed(2):'',t.type==='income'?t.amount.toFixed(2):'',t.cleared?'Cleared':'Uncleared'];
+        }));
+      filename='gatos-budget-full-export.csv';
+    }
+    downloadFile(csv,'text/csv',filename);
+    closeExportModal();toast('CSV downloaded');
+
+  } else {
+    // Excel — load SheetJS then build
+    if(typeof XLSX==='undefined'){
+      const script=document.createElement('script');
+      script.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+      script.onload=()=>buildAndDownloadXLSX(what,monthLabel);
+      document.head.appendChild(script);
+    } else {
+      buildAndDownloadXLSX(what,monthLabel);
+    }
+  }
+}
+
+function buildCSV(headers, rows){
+  const escape=v=>{const s=String(v??'');return s.includes(',')||s.includes('"')||s.includes('\n')?`"${s.replace(/"/g,'""')}"`:'';};
+  const fmtCell=v=>{const s=String(v??'');return s.includes(',')||s.includes('"')||s.includes('\n')?`"${s.replace(/"/g,'""')}"`:`${s}`;};
+  return[headers.join(','),...rows.map(r=>r.map(fmtCell).join(','))].join('\n');
+}
+
+function downloadFile(content, mime, filename){
+  const blob=new Blob([content],{type:mime});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=filename;a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+function buildAndDownloadXLSX(what, monthLabel){
+  const wb=XLSX.utils.book_new();
+
+  const txnRows=()=>transactions.sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(t=>{
+    const cat=categories.find(c=>c.id===t.categoryId);
+    return{Date:t.date||'',Payee:t.payee||'',Type:t.type,'Category Group':cat?.group||'',Category:cat?.name||'',
+      Account:getAcctName(t.accountId),Memo:t.memo||'',
+      Outflow:t.type==='expense'?t.amount:null,Inflow:t.type==='income'?t.amount:null,
+      Cleared:t.cleared?'Cleared':'Uncleared'};
+  });
+
+  if(what==='transactions'||what==='full'){
+    const ws=XLSX.utils.json_to_sheet(txnRows());
+    styleXLSXSheet(ws);
+    XLSX.utils.book_append_sheet(wb,ws,'Transactions');
+  }
+  if(what==='transactions-month'){
+    const rows=transactions.filter(t=>t.month===currentMonth).sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(t=>{
+      const cat=categories.find(c=>c.id===t.categoryId);
+      return{Date:t.date||'',Payee:t.payee||'',Type:t.type,'Category Group':cat?.group||'',Category:cat?.name||'',
+        Account:getAcctName(t.accountId),Memo:t.memo||'',
+        Outflow:t.type==='expense'?t.amount:null,Inflow:t.type==='income'?t.amount:null,
+        Cleared:t.cleared?'Cleared':'Uncleared'};
+    });
+    const ws=XLSX.utils.json_to_sheet(rows);
+    styleXLSXSheet(ws);
+    XLSX.utils.book_append_sheet(wb,ws,`Transactions ${monthLabel}`);
+  }
+  if(what==='budget'||what==='full'){
+    const budgetRows=[];
+    categories.forEach(cat=>{
+      const months=[...new Set([...Object.keys(cat.assigned||{}),currentMonth])].sort();
+      months.forEach(mo=>{
+        budgetRows.push({Group:cat.group||'',Category:cat.name,'Goal Type':cat.goal?.type||'',
+          'Goal Amount':cat.goal?.amount||null,Month:mo,Assigned:(cat.assigned||{})[mo]||0});
+      });
+    });
+    const ws=XLSX.utils.json_to_sheet(budgetRows);
+    styleXLSXSheet(ws);
+    XLSX.utils.book_append_sheet(wb,ws,'Budget');
+  }
+  if(what==='accounts'||what==='full'){
+    const acctRows=accounts.map(a=>({Account:a.name,Type:ACCT_LABELS[a.type]||a.type,
+      'Starting Balance':a.startingBalance||0,'Current Balance':acctBalance(a.id)}));
+    const ws=XLSX.utils.json_to_sheet(acctRows);
+    styleXLSXSheet(ws);
+    XLSX.utils.book_append_sheet(wb,ws,'Accounts');
+  }
+
+  const filenames={
+    'transactions':'gatos-budget-transactions.xlsx',
+    'transactions-month':`gatos-budget-transactions-${monthLabel}.xlsx`,
+    'budget':'gatos-budget-categories.xlsx',
+    'accounts':'gatos-budget-accounts.xlsx',
+    'full':'gatos-budget-full-export.xlsx',
+  };
+  XLSX.writeFile(wb,filenames[what]||'gatos-budget.xlsx');
+  closeExportModal();toast('Excel file downloaded');
+}
+
+function styleXLSXSheet(ws){
+  // Set column widths
+  const range=XLSX.utils.decode_range(ws['!ref']||'A1');
+  ws['!cols']=Array(range.e.c+1).fill({wch:18});
+}
+
 // ── WIRE UP ───────────────────────────────────────────────────────
 function setActiveNav(id){
   ['nav-budget','nav-all-txns','nav-reports'].forEach(n=>{
@@ -1916,7 +2153,9 @@ document.getElementById('nav-budget').addEventListener('click',()=>{showBudget()
 document.getElementById('nav-all-txns').addEventListener('click',()=>{showAllTxns();setActiveNav('nav-all-txns');});
 document.getElementById('nav-reports').addEventListener('click',()=>{showReports();setActiveNav('nav-reports');});
 document.getElementById('nav-import').addEventListener('click',openImportModal);
+document.getElementById('nav-export').addEventListener('click',openExportModal);
 document.getElementById('nav-fresh-start').addEventListener('click',openFreshStart);
+document.getElementById('export-modal').addEventListener('click',e=>{if(e.target===document.getElementById('export-modal'))closeExportModal();});
 document.getElementById('fresh-start-modal').addEventListener('click',e=>{if(e.target===document.getElementById('fresh-start-modal'))closeFreshStart();});
 document.getElementById('prev-month').addEventListener('click',()=>changeMonth(-1));
 document.getElementById('next-month').addEventListener('click',()=>changeMonth(1));
@@ -1925,6 +2164,7 @@ document.getElementById('cat-modal').addEventListener('click',e=>{if(e.target===
 document.getElementById('acct-modal').addEventListener('click',e=>{if(e.target===document.getElementById('acct-modal'))closeAcctModal();});
 document.getElementById('import-modal').addEventListener('click',e=>{if(e.target===document.getElementById('import-modal'))closeImportModal();});
 document.getElementById('goal-modal').addEventListener('click',e=>{if(e.target===document.getElementById('goal-modal'))closeGoalModal();});
+document.getElementById('edit-acct-modal').addEventListener('click',e=>{if(e.target===document.getElementById('edit-acct-modal'))closeEditAcctModal();});
 
 document.getElementById('txn-date').value=new Date().toISOString().slice(0,10);
 setType('income');
