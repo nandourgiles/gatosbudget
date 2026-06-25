@@ -218,6 +218,23 @@
   .toast{position:fixed;bottom:20px;right:20px;background:var(--navy);color:#fff;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:500;z-index:999;opacity:0;transform:translateY(8px);transition:opacity .2s,transform .2s;pointer-events:none;display:flex;align-items:center;gap:7px;}
   .toast.show{opacity:1;transform:translateY(0);}
 
+  /* ── INLINE TRANSACTION EDITING ── */
+  .txn-table tbody tr.editing { background: #f0faf6; }
+  .txn-table tbody tr.editing td { padding: 5px 8px; }
+  .td-edit-input { width:100%;padding:4px 6px;border:.5px solid var(--mint);border-radius:5px;font-size:12px;font-family:inherit;background:#fff;color:var(--text-primary);outline:none; }
+  .td-edit-select { width:100%;padding:4px 6px;border:.5px solid var(--mint);border-radius:5px;font-size:12px;font-family:inherit;background:#fff;color:var(--text-primary);outline:none;appearance:none; }
+  .td-edit-num { width:80px;padding:4px 6px;border:.5px solid var(--mint);border-radius:5px;font-size:12px;font-family:var(--mono);background:#fff;color:var(--text-primary);outline:none;text-align:right; }
+  .edit-save-btn { background:var(--mint);color:#fff;border:none;border-radius:5px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap; }
+  .edit-cancel-btn { background:none;border:.5px solid var(--border);border-radius:5px;padding:4px 8px;font-size:11px;cursor:pointer;color:var(--text-muted); }
+  .txn-table td.editable-cell { cursor:pointer; }
+  .txn-table td.editable-cell:hover { background:var(--mint-light); }
+
+  /* ── CATEGORY DRAG AND DROP ── */
+  .cat-drag-handle { cursor:grab;color:var(--text-muted);font-size:14px;padding:0 4px;opacity:.4;transition:opacity .15s; }
+  .cat-drag-handle:hover { opacity:1; }
+  tr.dragging { opacity:.4; }
+  tr.drag-over { border-top:2px solid var(--mint); }
+
   /* ── FUNDING GOALS ── */
   .goal-bar-wrap{width:100%;background:var(--border);border-radius:3px;height:5px;margin-top:4px;overflow:hidden;}
   .goal-bar-fill{height:100%;border-radius:3px;transition:width .4s ease;}
@@ -356,7 +373,7 @@
               </div>
             </div>
             <table class="cat-table">
-              <thead><tr><th>Category</th><th>Assigned</th><th>Activity</th><th>Available</th><th>Goal</th><th></th></tr></thead>
+              <thead><tr><th style="width:24px;"></th><th>Category</th><th>Assigned</th><th>Activity</th><th>Available</th><th>Goal</th><th></th></tr></thead>
               <tbody id="cat-tbody"></tbody>
             </table>
           </div>
@@ -852,10 +869,10 @@ function renderMonthLabel(){
 
 function renderCategories(){
   const tbody=document.getElementById('cat-tbody');
-  if(!categories.length){tbody.innerHTML='<tr><td colspan="5"><div class="no-data"><i class="ti ti-layout-list"></i>No categories yet.</div></td></tr>';return;}
+  if(!categories.length){tbody.innerHTML='<tr><td colspan="7"><div class="no-data"><i class="ti ti-layout-list"></i>No categories yet.</div></td></tr>';return;}
   const groups=groupCategories();let html='';
   Object.entries(groups).forEach(([group,cats])=>{
-    html+=`<tr class="cat-group-row"><td colspan="5">${group}</td></tr>`;
+    html+=`<tr class="cat-group-row"><td colspan="7">${group}</td></tr>`;
     cats.forEach(cat=>{
       const assigned=(cat.assigned||{})[currentMonth]||0;
       const activity=calcCatActivity(cat.id);const available=assigned-activity;
@@ -867,14 +884,12 @@ function renderCategories(){
         const goalAmt=cat.goal.amount||0;
         let pct=0,badgeCls='partial',badgeText='',barColor='var(--amber)',goalDesc='';
         if(cat.goal.type==='monthly'||cat.goal.type==='bill'){
-          // How much assigned vs goal
           pct=goalAmt>0?Math.min(100,(assigned/goalAmt)*100):100;
           const needed=Math.max(0,goalAmt-assigned);
           if(assigned>=goalAmt){badgeCls='funded';badgeText='Funded';barColor='var(--mint)';}
           else{badgeCls='partial';badgeText='-'+fmt(needed)+' needed';barColor='var(--amber)';}
           goalDesc=cat.goal.type==='bill'?'Fixed bill: '+fmt(goalAmt):'Limit: '+fmt(goalAmt);
         } else if(cat.goal.type==='savings'){
-          // Cumulative — sum all assigned across all months
           const totalSaved=Object.values(cat.assigned||{}).reduce((s,v)=>s+(v||0),0);
           pct=goalAmt>0?Math.min(100,(totalSaved/goalAmt)*100):100;
           const needed=Math.max(0,goalAmt-totalSaved);
@@ -893,7 +908,9 @@ function renderCategories(){
         </div>`;
       }
 
-      html+=`<tr>
+      html+=`<tr draggable="true" data-cat-id="${cat.id}" data-cat-group="${group}"
+          ondragstart="catDragStart(event)" ondragover="catDragOver(event)" ondragleave="catDragLeave(event)" ondrop="catDrop(event)" ondragend="catDragEnd(event)">
+        <td><i class="ti ti-grip-vertical cat-drag-handle" title="Drag to reorder"></i></td>
         <td><span class="cat-dot" style="background:${cat.color||'#888'}"></span><span class="cat-name">${cat.name}</span></td>
         <td><input class="assigned-edit mono" type="number" step="0.01" value="${assigned.toFixed(2)}" onchange="updateAssigned('${cat.id}',this.value)" onblur="updateAssigned('${cat.id}',this.value)"></td>
         <td class="mono ${activity>0?'negative-val':''}" style="${activity>0?'cursor:pointer;text-decoration:underline dotted;':''}" onclick="${activity>0?`showCategoryView('${cat.id}')`:''}" title="${activity>0?'Click to see transactions':''}">${activity>0?'-':''}${fmt(activity)}</td>
@@ -1053,15 +1070,17 @@ function renderAccountView(acctId){
     const runBal=balMap[t.id];
     const balCls=runBal==null?'':(runBal<0?'bal-neg':'bal-pos');
     const catName=getCatName(t);
-    const clearedEl=t.cleared?'<span class="cleared-dot" title="Cleared"></span>':'<span class="uncleared-dot" title="Uncleared"></span>';
-    return`<tr>
+    const clearedEl=t.cleared
+      ?`<span class="cleared-dot" title="Click to mark uncleared" style="cursor:pointer;" onclick="toggleCleared('${t.id}')"></span>`
+      :`<span class="uncleared-dot" title="Click to mark cleared" style="cursor:pointer;" onclick="toggleCleared('${t.id}')"></span>`;
+    return`<tr data-txn-id="${t.id}" ondblclick="startEditTxn('${t.id}','${acctId}')">
       <td class="td-cleared">${clearedEl}</td>
-      <td>${formatDate(t.date)}</td>
-      <td class="td-payee">${t.payee||'—'}</td>
-      <td class="td-cat">${catName}</td>
-      <td class="td-memo">${t.memo||''}</td>
-      <td class="num" style="color:var(--coral);">${outflow}</td>
-      <td class="num" style="color:var(--mint);">${inflow}</td>
+      <td class="editable-cell" onclick="startEditTxn('${t.id}','${acctId}')">${formatDate(t.date)}</td>
+      <td class="td-payee editable-cell" onclick="startEditTxn('${t.id}','${acctId}')">${t.payee||'—'}</td>
+      <td class="td-cat editable-cell" onclick="startEditTxn('${t.id}','${acctId}')">${catName}</td>
+      <td class="td-memo editable-cell" onclick="startEditTxn('${t.id}','${acctId}')">${t.memo||''}</td>
+      <td class="num editable-cell" style="color:var(--coral);" onclick="startEditTxn('${t.id}','${acctId}')">${outflow}</td>
+      <td class="num editable-cell" style="color:var(--mint);" onclick="startEditTxn('${t.id}','${acctId}')">${inflow}</td>
       <td class="num ${balCls}">${runBal!=null?fmt(runBal):''}</td>
       <td><button class="icon-btn delete" onclick="deleteTxn('${t.id}')"><i class="ti ti-trash"></i></button></td>
     </tr>`;
@@ -1752,6 +1771,140 @@ async function runFreshStart(){
   toast('Fresh start complete');
 }
 
+// ── INLINE TRANSACTION EDITING ────────────────────────────────────
+function toggleCleared(txnId){
+  const t=transactions.find(x=>x.id===txnId);if(!t)return;
+  t.cleared=!t.cleared;
+  if(currentAcctId)renderAccountView(currentAcctId);
+  scheduleSave();
+}
+
+function startEditTxn(txnId, acctId){
+  // If already editing this row, do nothing
+  const existingRow=document.querySelector(`tr[data-txn-id="${txnId}"].editing`);
+  if(existingRow)return;
+  // Cancel any other open edit first
+  cancelAllEdits();
+
+  const t=transactions.find(x=>x.id===txnId);if(!t)return;
+  const row=document.querySelector(`tr[data-txn-id="${txnId}"]`);if(!row)return;
+  row.classList.add('editing');
+
+  // Build category options
+  const catOptions=categories.map(c=>`<option value="${c.id}"${t.categoryId===c.id?' selected':''}>${c.name}</option>`).join('');
+
+  // Build account options for from/to
+  const acctOptions=accounts.map(a=>`<option value="${a.id}"${t.accountId===a.id?' selected':''}>${a.name}</option>`).join('');
+
+  const isReceiving=t.toAccountId===acctId&&t.type==='transfer';
+  const showOutflow=t.type==='expense'||(t.type==='transfer'&&!isReceiving);
+  const showInflow=t.type==='income'||isReceiving;
+
+  row.innerHTML=`
+    <td class="td-cleared"><span class="${t.cleared?'cleared-dot':'uncleared-dot'}" style="cursor:pointer;" onclick="toggleCleared('${txnId}')"></span></td>
+    <td><input class="td-edit-input" type="date" id="edit-date-${txnId}" value="${t.date||''}"></td>
+    <td><input class="td-edit-input" type="text" id="edit-payee-${txnId}" value="${t.payee||''}" placeholder="Payee"></td>
+    <td><select class="td-edit-select" id="edit-cat-${txnId}">
+      <option value="">— No category —</option>${catOptions}
+    </select></td>
+    <td><input class="td-edit-input" type="text" id="edit-memo-${txnId}" value="${t.memo||''}" placeholder="Memo"></td>
+    <td class="num"><input class="td-edit-num" type="number" id="edit-out-${txnId}" min="0" step="0.01" placeholder="0.00" value="${showOutflow?t.amount.toFixed(2):''}"></td>
+    <td class="num"><input class="td-edit-num" type="number" id="edit-in-${txnId}" min="0" step="0.01" placeholder="0.00" value="${showInflow?t.amount.toFixed(2):''}"></td>
+    <td></td>
+    <td style="white-space:nowrap;display:flex;gap:4px;align-items:center;padding:6px 8px;">
+      <button class="edit-save-btn" onclick="saveEditTxn('${txnId}','${acctId}')">Save</button>
+      <button class="edit-cancel-btn" onclick="cancelAllEdits();renderAccountView('${acctId}')">Cancel</button>
+    </td>`;
+
+  // Focus payee
+  setTimeout(()=>document.getElementById(`edit-payee-${txnId}`)?.focus(),30);
+
+  // Save on Enter
+  row.querySelectorAll('input,select').forEach(el=>{
+    el.addEventListener('keydown',e=>{
+      if(e.key==='Enter'){saveEditTxn(txnId,acctId);}
+      if(e.key==='Escape'){cancelAllEdits();renderAccountView(acctId);}
+    });
+  });
+}
+
+function saveEditTxn(txnId, acctId){
+  const t=transactions.find(x=>x.id===txnId);if(!t)return;
+  const date=document.getElementById(`edit-date-${txnId}`)?.value||t.date;
+  const payee=document.getElementById(`edit-payee-${txnId}`)?.value.trim()||t.payee;
+  const catId=document.getElementById(`edit-cat-${txnId}`)?.value||null;
+  const memo=document.getElementById(`edit-memo-${txnId}`)?.value.trim()||'';
+  const outVal=parseFloat(document.getElementById(`edit-out-${txnId}`)?.value)||0;
+  const inVal=parseFloat(document.getElementById(`edit-in-${txnId}`)?.value)||0;
+
+  // Determine new amount and type
+  let amount=t.amount, type=t.type;
+  if(outVal>0){amount=outVal;type=t.type==='transfer'?'transfer':'expense';}
+  else if(inVal>0){amount=inVal;type=t.type==='transfer'?'transfer':'income';}
+
+  t.date=date;
+  t.month=date.slice(0,7);
+  t.payee=payee;
+  t.categoryId=catId||t.categoryId;
+  t.memo=memo;
+  t.amount=amount;
+  t.type=type;
+  t._ts=Date.now();
+
+  cancelAllEdits();
+  renderAccountView(acctId);
+  scheduleSave();
+  toast('Transaction updated');
+}
+
+function cancelAllEdits(){
+  document.querySelectorAll('tr.editing').forEach(r=>r.classList.remove('editing'));
+}
+
+// ── CATEGORY DRAG AND DROP ────────────────────────────────────────
+let dragSrcCatId=null, dragSrcGroup=null;
+
+function catDragStart(e){
+  const row=e.currentTarget;
+  dragSrcCatId=row.dataset.catId;
+  dragSrcGroup=row.dataset.catGroup;
+  row.classList.add('dragging');
+  e.dataTransfer.effectAllowed='move';
+}
+function catDragOver(e){
+  e.preventDefault();
+  e.dataTransfer.dropEffect='move';
+  const row=e.currentTarget;
+  // Only allow within same group
+  if(row.dataset.catGroup!==dragSrcGroup)return;
+  document.querySelectorAll('tr.drag-over').forEach(r=>r.classList.remove('drag-over'));
+  if(row.dataset.catId!==dragSrcCatId)row.classList.add('drag-over');
+}
+function catDragLeave(e){
+  e.currentTarget.classList.remove('drag-over');
+}
+function catDragEnd(e){
+  e.currentTarget.classList.remove('dragging');
+  document.querySelectorAll('tr.drag-over').forEach(r=>r.classList.remove('drag-over'));
+}
+function catDrop(e){
+  e.preventDefault();
+  const targetRow=e.currentTarget;
+  const targetId=targetRow.dataset.catId;
+  const targetGroup=targetRow.dataset.catGroup;
+  if(!dragSrcCatId||targetId===dragSrcCatId||targetGroup!==dragSrcGroup)return;
+
+  // Reorder categories array
+  const srcIdx=categories.findIndex(c=>c.id===dragSrcCatId);
+  const tgtIdx=categories.findIndex(c=>c.id===targetId);
+  if(srcIdx<0||tgtIdx<0)return;
+  const [moved]=categories.splice(srcIdx,1);
+  categories.splice(tgtIdx,0,moved);
+
+  dragSrcCatId=null;dragSrcGroup=null;
+  renderCategories();
+  scheduleSave();
+}
 // ── WIRE UP ───────────────────────────────────────────────────────
 function setActiveNav(id){
   ['nav-budget','nav-all-txns','nav-reports'].forEach(n=>{
