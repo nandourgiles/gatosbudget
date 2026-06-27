@@ -94,13 +94,13 @@
   .sidebar-add:hover{color:rgba(255,255,255,.65);}
 
   /* ── MAIN CONTENT ── */
-  .content{flex:1;overflow-y:auto;padding:1.5rem;}
+  .content{flex:1;overflow-y:auto;padding:1rem 1.25rem;}
 
   /* ── ATB HERO — lush gradient ── */
-  .atb-hero{background:linear-gradient(135deg,#1e3a2f 0%,#25594a 60%,#1a7a5a 100%);border-radius:16px;padding:1.5rem 2rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:2rem;box-shadow:0 4px 24px rgba(26,122,90,.25);}
+  .atb-hero{background:linear-gradient(135deg,#1e3a2f 0%,#25594a 60%,#1a7a5a 100%);border-radius:14px;padding:1.25rem 1.5rem;margin-bottom:1rem;display:flex;align-items:center;gap:1.5rem;box-shadow:0 4px 24px rgba(26,122,90,.25);}
   .atb-left{flex:1;}
   .atb-label{font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:6px;}
-  .atb-amount{font-family:var(--mono);font-size:44px;font-weight:700;color:#fff;letter-spacing:-1px;line-height:1;}
+  .atb-amount{font-family:var(--mono);font-size:38px;font-weight:700;color:#fff;letter-spacing:-1px;line-height:1;}
   .atb-amount.positive{color:#7de8b8;}
   .atb-amount.negative{color:#ffb3aa;}
   .atb-amount.zero{color:rgba(255,255,255,.4);}
@@ -120,48 +120,55 @@
   .panel-title i{font-size:15px;color:var(--mint);}
 
   /* ── GRID ── */
-  .grid-two{display:grid;grid-template-columns:1fr 340px;gap:1.5rem;align-items:start;}
+  .grid-two{display:grid;grid-template-columns:1fr 300px;gap:1rem;align-items:start;}
   @media(max-width:900px){.grid-two{grid-template-columns:1fr;}.sidebar{display:none;}.atb-hero{flex-direction:column;}}
 
   /* ── CATEGORY TABLE ── */
-  .cat-table{width:100%;border-collapse:collapse;}
-  .cat-table thead th{padding:8px 18px;font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);text-align:right;border-bottom:.5px solid var(--border);}
-  .cat-table thead th:first-child{text-align:left;}
+  .cat-table{width:100%;border-collapse:collapse;table-layout:fixed;}
+  .cat-table thead th{padding:7px 10px;font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);text-align:right;border-bottom:.5px solid var(--border);}
+  .cat-table thead th:first-child{text-align:left;width:20px;padding-right:0;}
+  .cat-table thead th:nth-child(2){text-align:left;width:auto;}
+  .cat-table thead th:nth-child(3){width:95px;}  /* Assigned */
+  .cat-table thead th:nth-child(4){width:90px;}  /* Activity */
+  .cat-table thead th:nth-child(5){width:95px;}  /* Available */
+  .cat-table thead th:nth-child(6){width:130px;} /* Goal */
+  .cat-table thead th:last-child{width:28px;}
   .cat-table tbody tr{border-bottom:.5px solid var(--border);transition:background .1s;}
   .cat-table tbody tr:last-child{border-bottom:none;}
   .cat-table tbody tr:hover{background:var(--surface);}
-  .cat-table tbody td{padding:10px 18px;font-size:13px;text-align:right;}
-  .cat-table tbody td:first-child{text-align:left;display:flex;align-items:center;gap:8px;}
-  .cat-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
-  .cat-name{font-weight:500;}
-  .cat-group-row td{background:#f2f8f4;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted);padding:5px 18px;}
-  .mono{font-family:var(--mono);font-size:13px;}
+  .cat-table tbody td{padding:8px 10px;font-size:12px;text-align:right;vertical-align:middle;}
+  .cat-table tbody td:first-child{text-align:left;display:flex;align-items:center;gap:6px;padding-right:0;}
+  .cat-table tbody td:nth-child(2){text-align:left;}
+  .cat-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+  .cat-name{font-weight:500;word-break:break-word;line-height:1.3;}
+  .cat-group-row td{background:#f2f8f4;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted);padding:4px 10px;}
+  .mono{font-family:var(--mono);font-size:12px;}
   .positive-val{color:var(--mint);}
   .negative-val{color:var(--coral);}
-  .avail-pill{display:inline-block;font-family:var(--mono);font-size:11px;padding:2px 7px;border-radius:4px;font-weight:600;}
+  .avail-pill{display:inline-block;font-family:var(--mono);font-size:11px;padding:2px 6px;border-radius:4px;font-weight:600;}
   .avail-pos{background:var(--mint-light);color:#0a6b4e;}
   .avail-neg{background:var(--coral-light);color:#b03a2b;}
   .avail-zero{background:#f0f3f7;color:var(--slate);}
   .cat-actions{display:flex;gap:4px;justify-content:flex-end;}
-  .icon-btn{background:none;border:none;color:var(--text-muted);cursor:pointer;padding:2px;border-radius:4px;font-size:15px;transition:color .15s,background .15s;display:flex;align-items:center;}
+  .icon-btn{background:none;border:none;color:var(--text-muted);cursor:pointer;padding:2px;border-radius:4px;font-size:14px;transition:color .15s,background .15s;display:flex;align-items:center;}
   .icon-btn:hover{color:var(--text-primary);background:var(--surface);}
   .icon-btn.delete:hover{color:var(--coral);}
   .no-data{padding:2rem;text-align:center;color:var(--text-muted);font-size:14px;}
   .no-data i{font-size:28px;display:block;margin-bottom:8px;}
-  .assigned-edit{background:none;border:none;font-family:var(--mono);font-size:13px;color:var(--text-primary);text-align:right;width:85px;padding:3px 5px;border-radius:5px;cursor:pointer;transition:background .15s,box-shadow .15s;}
+  .assigned-edit{background:none;border:none;font-family:var(--mono);font-size:12px;color:var(--text-primary);text-align:right;width:100%;padding:3px 5px;border-radius:5px;cursor:pointer;transition:background .15s,box-shadow .15s;}
   .assigned-edit:hover{background:var(--surface);}
   .assigned-edit:focus{outline:none;background:var(--mint-light);box-shadow:0 0 0 2px rgba(26,170,124,.3);color:#0a6b4e;}
 
   /* ── FORM ── */
-  .form-body{padding:16px;}
-  .field{margin-bottom:12px;}
-  .field label{display:block;font-size:11px;font-weight:600;letter-spacing:.5px;color:var(--text-secondary);margin-bottom:4px;}
-  .field input,.field select{width:100%;padding:8px 11px;border:.5px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--text-primary);outline:none;transition:border-color .15s,box-shadow .15s;}
+  .form-body{padding:12px;}
+  .field{margin-bottom:9px;}
+  .field label{display:block;font-size:11px;font-weight:600;letter-spacing:.5px;color:var(--text-secondary);margin-bottom:3px;}
+  .field input,.field select{width:100%;padding:7px 10px;border:.5px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--text-primary);outline:none;transition:border-color .15s,box-shadow .15s;}
   .field input:focus,.field select:focus{border-color:var(--mint);box-shadow:0 0 0 3px rgba(26,170,124,.12);}
   .field select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238fa5bf' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center;padding-right:30px;}
   .field-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
   .type-toggle{display:flex;background:var(--surface);border:.5px solid var(--border);border-radius:7px;overflow:hidden;}
-  .type-toggle button{flex:1;border:none;background:none;padding:8px;font-size:12px;font-weight:500;cursor:pointer;transition:background .15s,color .15s;color:var(--text-muted);display:flex;align-items:center;justify-content:center;gap:5px;}
+  .type-toggle button{flex:1;border:none;background:none;padding:7px 4px;font-size:11px;font-weight:500;cursor:pointer;transition:background .15s,color .15s;color:var(--text-muted);display:flex;align-items:center;justify-content:center;gap:4px;}
   .type-toggle button.active-income{background:var(--mint-light);color:var(--mint);}
   .type-toggle button.active-expense{background:var(--coral-light);color:var(--coral);}
   .btn-primary{width:100%;padding:10px;background:linear-gradient(135deg,var(--navy) 0%,#25594a 100%);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:opacity .15s,transform .1s;display:flex;align-items:center;justify-content:center;gap:7px;margin-top:4px;box-shadow:0 2px 8px rgba(30,58,47,.2);}
@@ -472,8 +479,43 @@
       <div class="panel">
         <div class="panel-header">
           <div class="panel-title"><i class="ti ti-list"></i> <span id="acct-view-txn-title">Transactions</span></div>
-          <div style="display:flex;gap:8px;">
-            <input type="text" id="acct-search" placeholder="Search…" style="padding:5px 10px;border:.5px solid var(--border);border-radius:6px;font-size:12px;background:var(--surface);outline:none;width:160px;" oninput="renderAccountView(currentAcctId)">
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button class="btn-sm" style="background:#f0a500;border-color:#f0a500;color:#fff;font-weight:600;" onclick="toggleAcctAddRow()"><i class="ti ti-plus"></i> Add Transaction</button>
+            <input type="text" id="acct-search" placeholder="Search…" style="padding:5px 10px;border:.5px solid var(--border);border-radius:6px;font-size:12px;background:var(--surface);outline:none;width:150px;" oninput="renderAccountView(currentAcctId)">
+          </div>
+        </div>
+
+        <!-- Inline add transaction row -->
+        <div id="acct-add-row" style="display:none;background:#fffdf0;border-bottom:.5px solid #f0e0a0;padding:10px 14px;">
+          <div style="display:grid;grid-template-columns:100px 1fr 1fr 1fr 90px 90px auto;gap:8px;align-items:center;">
+            <div>
+              <div style="font-size:10px;font-weight:600;color:var(--text-secondary);margin-bottom:3px;">Date</div>
+              <input type="date" id="acct-add-date" style="width:100%;padding:6px 8px;border:.5px solid #f0e0a0;border-radius:6px;font-size:12px;background:#fff;outline:none;">
+            </div>
+            <div>
+              <div style="font-size:10px;font-weight:600;color:var(--text-secondary);margin-bottom:3px;">Payee</div>
+              <input type="text" id="acct-add-payee" placeholder="Payee / description" style="width:100%;padding:6px 8px;border:.5px solid #f0e0a0;border-radius:6px;font-size:12px;background:#fff;outline:none;">
+            </div>
+            <div>
+              <div style="font-size:10px;font-weight:600;color:var(--text-secondary);margin-bottom:3px;">Category</div>
+              <select id="acct-add-cat" style="width:100%;padding:6px 8px;border:.5px solid #f0e0a0;border-radius:6px;font-size:12px;background:#fff;outline:none;appearance:none;"></select>
+            </div>
+            <div>
+              <div style="font-size:10px;font-weight:600;color:var(--text-secondary);margin-bottom:3px;">Memo</div>
+              <input type="text" id="acct-add-memo" placeholder="Optional note" style="width:100%;padding:6px 8px;border:.5px solid #f0e0a0;border-radius:6px;font-size:12px;background:#fff;outline:none;">
+            </div>
+            <div>
+              <div style="font-size:10px;font-weight:600;color:var(--coral);margin-bottom:3px;">Outflow</div>
+              <input type="number" id="acct-add-outflow" placeholder="0.00" min="0" step="0.01" style="width:100%;padding:6px 8px;border:.5px solid #f0e0a0;border-radius:6px;font-size:12px;font-family:var(--mono);background:#fff;outline:none;text-align:right;">
+            </div>
+            <div>
+              <div style="font-size:10px;font-weight:600;color:var(--mint);margin-bottom:3px;">Inflow</div>
+              <input type="number" id="acct-add-inflow" placeholder="0.00" min="0" step="0.01" style="width:100%;padding:6px 8px;border:.5px solid #f0e0a0;border-radius:6px;font-size:12px;font-family:var(--mono);background:#fff;outline:none;text-align:right;">
+            </div>
+            <div style="display:flex;gap:6px;align-items:flex-end;padding-bottom:1px;">
+              <button onclick="saveAcctAddRow()" style="background:var(--mint);color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">Save</button>
+              <button onclick="toggleAcctAddRow()" style="background:none;border:.5px solid var(--border);border-radius:6px;padding:7px 10px;font-size:12px;cursor:pointer;color:var(--text-muted);">Cancel</button>
+            </div>
           </div>
         </div>
         <div class="tabs">
@@ -2083,9 +2125,78 @@ function catDrop(e){
   renderCategories();
   scheduleSave();
 }
-// ── RECONCILE ─────────────────────────────────────────────────────
+// ── ACCOUNT INLINE ADD TRANSACTION ───────────────────────────────
+function toggleAcctAddRow(){
+  const row=document.getElementById('acct-add-row');
+  const isOpen=row.style.display!=='none';
+  if(isOpen){row.style.display='none';return;}
+
+  // Populate category select
+  const sel=document.getElementById('acct-add-cat');
+  sel.innerHTML='<option value="">— Expense category —</option>';
+  const groups=groupCategories();
+  Object.entries(groups).forEach(([group,cats])=>{
+    const og=document.createElement('optgroup');og.label=group;
+    cats.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.name;og.appendChild(o);});
+    sel.appendChild(og);
+  });
+  // Also add income and transfer options
+  sel.innerHTML+='<option value="__income__">— Income (inflow) —</option>';
+
+  // Set today's date
+  document.getElementById('acct-add-date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('acct-add-payee').value='';
+  document.getElementById('acct-add-memo').value='';
+  document.getElementById('acct-add-outflow').value='';
+  document.getElementById('acct-add-inflow').value='';
+
+  row.style.display='block';
+  setTimeout(()=>document.getElementById('acct-add-payee').focus(),40);
+
+  // Save on Enter key in any field
+  row.querySelectorAll('input,select').forEach(el=>{
+    el.onkeydown=e=>{
+      if(e.key==='Enter')saveAcctAddRow();
+      if(e.key==='Escape')toggleAcctAddRow();
+    };
+  });
+}
+
+function saveAcctAddRow(){
+  const date=document.getElementById('acct-add-date').value;
+  const payee=document.getElementById('acct-add-payee').value.trim();
+  const catId=document.getElementById('acct-add-cat').value;
+  const memo=document.getElementById('acct-add-memo').value.trim();
+  const outflow=parseFloat(document.getElementById('acct-add-outflow').value)||0;
+  const inflow=parseFloat(document.getElementById('acct-add-inflow').value)||0;
+
+  if(!payee){toast('Enter a payee','error');document.getElementById('acct-add-payee').focus();return;}
+  if(!date){toast('Select a date','error');return;}
+  if(outflow===0&&inflow===0){toast('Enter an outflow or inflow amount','error');return;}
+
+  const isIncome=inflow>0&&catId==='__income__'||inflow>0&&!catId;
+  const amount=outflow>0?outflow:inflow;
+  const type=outflow>0?'expense':'income';
+  const month=date.slice(0,7);
+
+  transactions.push({
+    id:uid(),type,amount,payee,memo,date,month,
+    accountId:currentAcctId,
+    categoryId:type==='expense'?(catId&&catId!=='__income__'?catId:null):null,
+    cleared:true,_ts:Date.now()
+  });
+
+  toggleAcctAddRow();
+  renderAccountView(currentAcctId);
+  renderSidebar();
+  renderRecentTxns();
+  renderATB();
+  scheduleSave();
+  toast('Transaction saved');
+}
 let reconcileBankBalance=null;
 
+// ── RECONCILE ─────────────────────────────────────────────────────
 function clearedBalance(acctId){
   const acct=accounts.find(a=>a.id===acctId);
   return (acct?.startingBalance||0)+transactions.filter(t=>t.cleared&&(t.accountId===acctId||t.toAccountId===acctId)).reduce((s,t)=>{
