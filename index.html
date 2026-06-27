@@ -212,9 +212,9 @@
   .uncleared-dot{width:6px;height:6px;border-radius:50%;background:var(--amber);display:inline-block;}
 
   /* ── MODALS ── */
-  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center;}
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:flex-start;justify-content:center;padding:1rem;overflow-y:auto;}
   .modal-overlay.open{display:flex;}
-  .modal{background:var(--surface-card);border-radius:14px;padding:22px;width:360px;max-width:92vw;}
+  .modal{background:var(--surface-card);border-radius:14px;padding:22px;width:360px;max-width:calc(100vw - 2rem);max-height:calc(100vh - 2rem);overflow-y:auto;margin:auto;}
   .modal h3{font-size:15px;font-weight:600;margin-bottom:14px;}
   .modal-footer{display:flex;gap:8px;margin-top:14px;}
   .btn-ghost{flex:1;padding:10px;border:.5px solid var(--border);background:none;border-radius:8px;font-size:13px;cursor:pointer;color:var(--text-secondary);}
@@ -706,7 +706,7 @@
 
 <!-- NEW BUDGET YEAR MODAL -->
 <div class="modal-overlay" id="new-year-modal">
-  <div class="modal" style="width:460px;">
+  <div class="modal" style="width:460px;max-width:calc(100vw - 2rem);max-height:calc(100vh - 2rem);overflow-y:auto;">
     <h3 style="display:flex;align-items:center;gap:8px;color:var(--mint);"><i class="ti ti-calendar-plus"></i> New Budget Year</h3>
     <p style="font-size:13px;color:var(--text-secondary);margin:8px 0 16px;line-height:1.6;">Start a fresh budget year while keeping everything you've built. Your current data will be <strong>automatically archived to Google Drive</strong> before anything changes.</p>
 
@@ -757,7 +757,7 @@
 
 <!-- FRESH START MODAL -->
 <div class="modal-overlay" id="fresh-start-modal">
-  <div class="modal" style="width:440px;">
+  <div class="modal" style="width:440px;max-width:calc(100vw - 2rem);max-height:calc(100vh - 2rem);overflow-y:auto;">
 
     <!-- ⚠️ Big warning banner -->
     <div style="background:#fff0ee;border:1.5px solid var(--coral);border-radius:10px;padding:14px;margin-bottom:18px;text-align:center;">
@@ -875,7 +875,7 @@
   </div>
 </div>
 <div class="modal-overlay" id="import-modal">
-  <div class="modal" style="width:520px;max-width:95vw;">
+  <div class="modal" style="width:520px;max-width:calc(100vw - 2rem);max-height:calc(100vh - 2rem);overflow-y:auto;">
     <h3 style="display:flex;align-items:center;gap:8px;"><i class="ti ti-file-import" style="color:var(--mint)"></i> Import from YNAB</h3>
     <p style="font-size:13px;color:var(--text-secondary);margin:6px 0 16px;line-height:1.6;">In YNAB → click your plan name → <strong>Export Plan</strong>. Upload both CSVs below.</p>
     <div class="field">
@@ -907,7 +907,7 @@
 
 <!-- RECONCILE MODAL -->
 <div class="modal-overlay" id="reconcile-modal">
-  <div class="modal" style="width:400px;">
+  <div class="modal" style="width:400px;max-width:calc(100vw - 2rem);">
     <!-- Step 1: confirm cleared balance -->
     <div id="reconcile-step-1">
       <h3 style="display:flex;align-items:center;gap:8px;"><i class="ti ti-checkup-list" style="color:#2a4fd4;"></i> Reconcile</h3>
@@ -951,7 +951,7 @@
 
 <!-- EXPORT MODAL -->
 <div class="modal-overlay" id="export-modal">
-  <div class="modal" style="width:440px;">
+  <div class="modal" style="width:440px;max-width:calc(100vw - 2rem);max-height:calc(100vh - 2rem);overflow-y:auto;">
     <h3 style="display:flex;align-items:center;gap:8px;"><i class="ti ti-file-export" style="color:var(--mint);"></i> Export Data</h3>
     <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;line-height:1.6;">Choose what to export and the file format. Files download directly to your device.</p>
     <div class="field"><label>What to export</label>
