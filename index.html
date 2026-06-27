@@ -355,14 +355,20 @@
     <button id="nav-import" style="border:.5px solid rgba(255,255,255,.2);"><i class="ti ti-file-import"></i> Import YNAB</button>
     <button id="nav-export" style="border:.5px solid rgba(255,255,255,.2);"><i class="ti ti-file-export"></i> Export</button>
     <button id="nav-new-year" style="border:.5px solid rgba(125,232,184,.35);color:#7de8b8;"><i class="ti ti-calendar-plus"></i> New Year</button>
-    <button id="nav-fresh-start" style="border:.5px solid rgba(224,83,64,.4);color:var(--coral);"><i class="ti ti-skull"></i> Fresh Start</button>
+    <button id="nav-fresh-start" style="border:.5px solid rgba(224,83,64,.4);color:var(--coral);"><i class="ti ti-plant"></i> Fresh Start</button>
   </nav>
 </header>
 
 <div id="sync-bar" class="hidden">
   <div class="sync-status"><div class="sync-dot" id="sync-dot"></div><span id="sync-label">Loading…</span></div>
   <div style="display:flex;align-items:center;gap:10px;">
-    <div class="user-pill" id="user-pill" style="display:none;"><img class="user-avatar" id="user-avatar" src="" alt=""><span class="user-name" id="user-name"></span></div>
+    <div class="user-pill" id="user-pill" style="display:none;">
+      <div id="user-avatar-wrap" style="width:22px;height:22px;border-radius:50%;overflow:hidden;flex-shrink:0;background:#1aaa7c;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;" id="user-avatar-fallback">
+        <img id="user-avatar" src="" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';document.getElementById('user-avatar-initials').style.display='flex';">
+        <span id="user-avatar-initials" style="display:none;width:100%;height:100%;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;"></span>
+      </div>
+      <span class="user-name" id="user-name"></span>
+    </div>
     <button class="btn-signout" id="btn-signout">Sign out</button>
   </div>
 </div>
@@ -761,7 +767,7 @@
 
     <!-- ⚠️ Big warning banner -->
     <div style="background:#fff0ee;border:1.5px solid var(--coral);border-radius:10px;padding:14px;margin-bottom:18px;text-align:center;">
-      <i class="ti ti-skull" style="font-size:28px;color:var(--coral);display:block;margin-bottom:6px;"></i>
+      <i class="ti ti-plant" style="font-size:28px;color:var(--coral);display:block;margin-bottom:6px;"></i>
       <div style="font-size:15px;font-weight:700;color:var(--coral);margin-bottom:4px;">⚠ This is permanent and irreversible</div>
       <div style="font-size:12px;color:#b03a2b;line-height:1.6;">Fresh Start <strong>permanently deletes</strong> data with no undo, no archive, and no recovery. Once you click Confirm, it is gone forever — including from Google Drive.</div>
     </div>
@@ -1107,8 +1113,17 @@ async function onSignedIn(token){
   try{
     const r=await fetch('https://www.googleapis.com/oauth2/v3/userinfo',{headers:{Authorization:'Bearer '+token}});
     const u=await r.json();
-    document.getElementById('user-name').textContent=u.given_name||u.name||u.email;
-    if(u.picture)document.getElementById('user-avatar').src=u.picture;
+    const displayName=u.given_name||u.name||u.email||'';
+    document.getElementById('user-name').textContent=displayName;
+    // Set initials for fallback
+    const initials=displayName.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    document.getElementById('user-avatar-initials').textContent=initials;
+    if(u.picture){
+      document.getElementById('user-avatar').src=u.picture;
+    } else {
+      document.getElementById('user-avatar').style.display='none';
+      document.getElementById('user-avatar-initials').style.display='flex';
+    }
     document.getElementById('user-pill').style.display='flex';
   }catch(e){}
   await loadFromDrive();
