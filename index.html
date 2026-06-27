@@ -354,7 +354,8 @@
     <button id="nav-reports"><i class="ti ti-chart-bar"></i> Reports</button>
     <button id="nav-import" style="border:.5px solid rgba(255,255,255,.2);"><i class="ti ti-file-import"></i> Import YNAB</button>
     <button id="nav-export" style="border:.5px solid rgba(255,255,255,.2);"><i class="ti ti-file-export"></i> Export</button>
-    <button id="nav-fresh-start" style="border:.5px solid rgba(224,83,64,.4);color:var(--coral);"><i class="ti ti-refresh"></i> Fresh Start</button>
+    <button id="nav-new-year" style="border:.5px solid rgba(125,232,184,.35);color:#7de8b8;"><i class="ti ti-calendar-plus"></i> New Year</button>
+    <button id="nav-fresh-start" style="border:.5px solid rgba(224,83,64,.4);color:var(--coral);"><i class="ti ti-skull"></i> Fresh Start</button>
   </nav>
 </header>
 
@@ -703,36 +704,104 @@
   </div>
 </div>
 
+<!-- NEW BUDGET YEAR MODAL -->
+<div class="modal-overlay" id="new-year-modal">
+  <div class="modal" style="width:460px;">
+    <h3 style="display:flex;align-items:center;gap:8px;color:var(--mint);"><i class="ti ti-calendar-plus"></i> New Budget Year</h3>
+    <p style="font-size:13px;color:var(--text-secondary);margin:8px 0 16px;line-height:1.6;">Start a fresh budget year while keeping everything you've built. Your current data will be <strong>automatically archived to Google Drive</strong> before anything changes.</p>
+
+    <!-- What carries over -->
+    <div style="background:var(--mint-light);border-radius:10px;padding:14px;margin-bottom:14px;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#0a6b4e;margin-bottom:10px;display:flex;align-items:center;gap:6px;"><i class="ti ti-circle-check"></i> What carries over</div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#0a6b4e;"><i class="ti ti-layout-list" style="font-size:15px;flex-shrink:0;"></i> All categories &amp; groups</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#0a6b4e;"><i class="ti ti-target" style="font-size:15px;flex-shrink:0;"></i> All funding goals</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#0a6b4e;"><i class="ti ti-building-bank" style="font-size:15px;flex-shrink:0;"></i> All accounts &amp; balances</div>
+      </div>
+    </div>
+
+    <!-- What resets -->
+    <div style="background:var(--amber-light);border-radius:10px;padding:14px;margin-bottom:14px;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--amber);margin-bottom:10px;display:flex;align-items:center;gap:6px;"><i class="ti ti-refresh"></i> What resets</div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#7a4a05;"><i class="ti ti-currency-dollar" style="font-size:15px;flex-shrink:0;"></i> All assigned amounts reset to $0</div>
+      </div>
+    </div>
+
+    <!-- Transactions choice -->
+    <div style="border:.5px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;">
+      <div style="font-size:12px;font-weight:600;color:var(--text-primary);margin-bottom:10px;">What about your transactions?</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:13px;">
+          <input type="radio" name="ny-txns" id="ny-keep" value="keep" checked style="margin-top:2px;accent-color:var(--mint);">
+          <div><div style="font-weight:500;color:var(--text-primary);">Keep transactions</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Recommended — account balances stay accurate and you can still view history</div></div>
+        </label>
+        <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:13px;">
+          <input type="radio" name="ny-txns" id="ny-clear" value="clear" style="margin-top:2px;accent-color:var(--mint);">
+          <div><div style="font-weight:500;color:var(--text-primary);">Clear transactions</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Wipes all transaction history — the archive backup will still have them</div></div>
+        </label>
+      </div>
+    </div>
+
+    <div style="background:var(--surface);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--text-secondary);margin-bottom:14px;display:flex;gap:8px;align-items:flex-start;">
+      <i class="ti ti-cloud" style="color:var(--mint);flex-shrink:0;margin-top:1px;font-size:15px;"></i>
+      <span>A backup named <strong>zerobudget-backup-<span id="ny-year-label">2026</span>.json</strong> will be saved to your Google Drive before anything changes. You can restore it anytime.</span>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeNewYearModal()">Cancel</button>
+      <button style="flex:1;padding:10px;background:linear-gradient(135deg,var(--navy),#25594a);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;" onclick="runNewYear()"><i class="ti ti-calendar-plus"></i> Archive &amp; Start New Year</button>
+    </div>
+  </div>
+</div>
+
 <!-- FRESH START MODAL -->
 <div class="modal-overlay" id="fresh-start-modal">
-  <div class="modal" style="width:420px;">
-    <h3 style="display:flex;align-items:center;gap:8px;color:var(--coral);"><i class="ti ti-alert-triangle"></i> Fresh Start</h3>
-    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;line-height:1.6;">Choose what to clear. This cannot be undone — make sure you've exported or backed up anything you want to keep.</p>
-    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
-      <label style="display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;padding:10px 12px;border:.5px solid var(--border);border-radius:8px;">
+  <div class="modal" style="width:440px;">
+
+    <!-- ⚠️ Big warning banner -->
+    <div style="background:#fff0ee;border:1.5px solid var(--coral);border-radius:10px;padding:14px;margin-bottom:18px;text-align:center;">
+      <i class="ti ti-skull" style="font-size:28px;color:var(--coral);display:block;margin-bottom:6px;"></i>
+      <div style="font-size:15px;font-weight:700;color:var(--coral);margin-bottom:4px;">⚠ This is permanent and irreversible</div>
+      <div style="font-size:12px;color:#b03a2b;line-height:1.6;">Fresh Start <strong>permanently deletes</strong> data with no undo, no archive, and no recovery. Once you click Confirm, it is gone forever — including from Google Drive.</div>
+    </div>
+
+    <h3 style="display:flex;align-items:center;gap:8px;color:var(--text-primary);margin-bottom:6px;"><i class="ti ti-alert-triangle" style="color:var(--coral);"></i> What do you want to delete?</h3>
+    <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px;">Select only what you need. Unchecked items will be kept.</p>
+
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
+      <label style="display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;padding:10px 12px;border:.5px solid var(--border);border-radius:8px;transition:border-color .15s;" onmouseenter="this.style.borderColor='var(--coral)'" onmouseleave="this.style.borderColor='var(--border)'">
         <input type="checkbox" id="fs-transactions" style="width:15px;height:15px;accent-color:var(--coral);">
-        <div><div style="font-weight:500;">Clear all transactions</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Removes every income, expense, and transfer entry</div></div>
+        <div><div style="font-weight:500;">Delete all transactions</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Every income, expense, and transfer — gone permanently</div></div>
       </label>
-      <label style="display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;padding:10px 12px;border:.5px solid var(--border);border-radius:8px;">
+      <label style="display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;padding:10px 12px;border:.5px solid var(--border);border-radius:8px;transition:border-color .15s;" onmouseenter="this.style.borderColor='var(--coral)'" onmouseleave="this.style.borderColor='var(--border)'">
         <input type="checkbox" id="fs-assigned" style="width:15px;height:15px;accent-color:var(--coral);">
-        <div><div style="font-weight:500;">Clear all assigned amounts</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Resets budgeted amounts to $0 but keeps your categories</div></div>
+        <div><div style="font-weight:500;">Delete all assigned amounts</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Resets all budget allocations to $0 across every month</div></div>
       </label>
-      <label style="display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;padding:10px 12px;border:.5px solid var(--border);border-radius:8px;">
+      <label style="display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;padding:10px 12px;border:.5px solid var(--border);border-radius:8px;transition:border-color .15s;" onmouseenter="this.style.borderColor='var(--coral)'" onmouseleave="this.style.borderColor='var(--border)'">
         <input type="checkbox" id="fs-categories" style="width:15px;height:15px;accent-color:var(--coral);">
-        <div><div style="font-weight:500;">Clear all categories &amp; goals</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Removes all category groups, categories, and funding goals</div></div>
+        <div><div style="font-weight:500;">Delete all categories &amp; goals</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;">All category groups, names, colors, and funding goals — gone</div></div>
       </label>
-      <label style="display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;padding:10px 12px;border:.5px solid var(--border);border-radius:8px;">
+      <label style="display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;padding:10px 12px;border:.5px solid var(--border);border-radius:8px;transition:border-color .15s;" onmouseenter="this.style.borderColor='var(--coral)'" onmouseleave="this.style.borderColor='var(--border)'">
         <input type="checkbox" id="fs-accounts" style="width:15px;height:15px;accent-color:var(--coral);">
-        <div><div style="font-weight:500;">Clear all accounts</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Removes all accounts and their starting balances</div></div>
+        <div><div style="font-weight:500;">Delete all accounts</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;">CIBC Mutual, PC Mastercard, all accounts and their balances — gone</div></div>
       </label>
     </div>
-    <div style="background:var(--coral-light);border-radius:8px;padding:10px 12px;font-size:12px;color:#b03a2b;margin-bottom:14px;display:flex;gap:8px;align-items:flex-start;">
-      <i class="ti ti-info-circle" style="flex-shrink:0;margin-top:1px;"></i>
-      <span>Your Google Drive file will be overwritten immediately. If you want a backup, download the Drive file first.</span>
+
+    <!-- Confirm phrase -->
+    <div style="margin-bottom:14px;">
+      <div style="font-size:12px;color:var(--text-secondary);margin-bottom:6px;">Type <strong>DELETE</strong> to confirm you understand this cannot be undone:</div>
+      <input type="text" id="fs-confirm-phrase" placeholder="Type DELETE here" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;background:var(--surface);outline:none;letter-spacing:1px;" oninput="checkFreshStartPhrase()">
     </div>
+
+    <div style="background:var(--coral-light);border-radius:8px;padding:10px 12px;font-size:12px;color:#b03a2b;margin-bottom:14px;display:flex;gap:8px;align-items:flex-start;">
+      <i class="ti ti-cloud-off" style="flex-shrink:0;margin-top:1px;font-size:15px;"></i>
+      <span><strong>No backup is created.</strong> If you want to save a copy first, use <strong>Export → Everything</strong> or run <strong>New Budget Year</strong> instead — it archives automatically.</span>
+    </div>
+
     <div class="modal-footer">
-      <button class="btn-ghost" onclick="closeFreshStart()">Cancel</button>
-      <button style="flex:1;padding:10px;background:var(--coral);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;" onclick="runFreshStart()">Confirm &amp; Clear</button>
+      <button class="btn-ghost" onclick="closeFreshStart()">Cancel — keep my data</button>
+      <button id="fs-confirm-btn" style="flex:1;padding:10px;background:#ccc;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:not-allowed;opacity:.6;transition:background .2s,opacity .2s;" onclick="runFreshStart()" disabled>Delete permanently</button>
     </div>
   </div>
 </div>
@@ -2242,22 +2311,95 @@ function renderReports(){
   }).join(''):'<div class="no-data"><i class="ti ti-target"></i>No goals set yet.</div>';
 }
 
+// ── NEW BUDGET YEAR ───────────────────────────────────────────────
+function openNewYearModal(){
+  const year=new Date().getFullYear().toString();
+  document.getElementById('ny-year-label').textContent=year;
+  document.getElementById('ny-keep').checked=true;
+  document.getElementById('new-year-modal').classList.add('open');
+}
+function closeNewYearModal(){document.getElementById('new-year-modal').classList.remove('open');}
+
+async function runNewYear(){
+  const btn=document.querySelector('#new-year-modal .modal-footer button:last-child');
+  btn.textContent='Archiving…';btn.disabled=true;
+
+  try{
+    // 1. Save archive to Drive with year-stamped filename
+    const year=new Date().getFullYear().toString();
+    const archiveName=`zerobudget-backup-${year}.json`;
+    const payload=JSON.stringify({categories,transactions,accounts,archivedAt:new Date().toISOString(),year});
+
+    if(accessToken){
+      // Create a new Drive file for the archive
+      const boundary='zb_archive_boundary';
+      const body=`--${boundary}\r\nContent-Type: application/json\r\n\r\n${JSON.stringify({name:archiveName,parents:['appDataFolder']})}\r\n--${boundary}\r\nContent-Type: application/json\r\n\r\n${payload}\r\n--${boundary}--`;
+      await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{
+        method:'POST',
+        headers:{'Authorization':'Bearer '+accessToken,'Content-Type':`multipart/related; boundary=${boundary}`},
+        body
+      });
+    }
+
+    // 2. Reset assigned amounts across all categories
+    categories.forEach(c=>{c.assigned={};});
+
+    // 3. Optionally clear transactions
+    const clearTxns=document.getElementById('ny-clear').checked;
+    if(clearTxns){
+      transactions=[];
+    }
+
+    // 4. Jump to January of next year
+    const nextYear=(parseInt(year)+1).toString();
+    currentMonth=`${nextYear}-01`;
+
+    closeNewYearModal();
+    renderAll();
+    scheduleSave();
+    toast(`✓ ${year} archived to Drive — welcome to ${nextYear}!`);
+  }catch(e){
+    toast('Archive failed: '+e.message,'error');
+    btn.textContent='Archive & Start New Year';btn.disabled=false;
+  }
+}
+
 // ── FRESH START ───────────────────────────────────────────────────
-function openFreshStart(){document.getElementById('fresh-start-modal').classList.add('open');}
+function openFreshStart(){
+  document.getElementById('fs-confirm-phrase').value='';
+  document.getElementById('fs-transactions').checked=false;
+  document.getElementById('fs-assigned').checked=false;
+  document.getElementById('fs-categories').checked=false;
+  document.getElementById('fs-accounts').checked=false;
+  checkFreshStartPhrase();
+  document.getElementById('fresh-start-modal').classList.add('open');
+}
 function closeFreshStart(){document.getElementById('fresh-start-modal').classList.remove('open');}
+
+function checkFreshStartPhrase(){
+  const val=document.getElementById('fs-confirm-phrase').value.trim().toUpperCase();
+  const btn=document.getElementById('fs-confirm-btn');
+  const ready=val==='DELETE';
+  btn.disabled=!ready;
+  btn.style.background=ready?'var(--coral)':'#ccc';
+  btn.style.opacity=ready?'1':'.6';
+  btn.style.cursor=ready?'pointer':'not-allowed';
+}
+
 async function runFreshStart(){
   const doTxns=document.getElementById('fs-transactions').checked;
   const doAssigned=document.getElementById('fs-assigned').checked;
   const doCats=document.getElementById('fs-categories').checked;
   const doAccts=document.getElementById('fs-accounts').checked;
   if(!doTxns&&!doAssigned&&!doCats&&!doAccts){toast('Select at least one option','error');return;}
-  if(!confirm('Are you sure? This cannot be undone.'))return;
+  const phrase=document.getElementById('fs-confirm-phrase').value.trim().toUpperCase();
+  if(phrase!=='DELETE'){toast('Type DELETE to confirm','error');return;}
   if(doTxns)transactions=[];
   if(doAssigned)categories.forEach(c=>c.assigned={});
   if(doCats){categories=[];transactions=transactions.map(t=>({...t,categoryId:null}));}
   if(doAccts){accounts=[];transactions=transactions.map(t=>({...t,accountId:null,toAccountId:null}));}
   closeFreshStart();showBudget();renderAll();scheduleSave();
-  toast('Fresh start complete');
+  toast('Fresh start complete — data permanently deleted');
 }
 
 // ── INLINE TRANSACTION EDITING ────────────────────────────────────
@@ -2789,9 +2931,11 @@ document.getElementById('nav-all-txns').addEventListener('click',()=>{showAllTxn
 document.getElementById('nav-reports').addEventListener('click',()=>{showReports();setActiveNav('nav-reports');});
 document.getElementById('nav-import').addEventListener('click',openImportModal);
 document.getElementById('nav-export').addEventListener('click',openExportModal);
+document.getElementById('nav-new-year').addEventListener('click',openNewYearModal);
 document.getElementById('nav-fresh-start').addEventListener('click',openFreshStart);
 document.getElementById('export-modal').addEventListener('click',e=>{if(e.target===document.getElementById('export-modal'))closeExportModal();});
 document.getElementById('fresh-start-modal').addEventListener('click',e=>{if(e.target===document.getElementById('fresh-start-modal'))closeFreshStart();});
+document.getElementById('new-year-modal').addEventListener('click',e=>{if(e.target===document.getElementById('new-year-modal'))closeNewYearModal();});
 document.getElementById('prev-month').addEventListener('click',()=>changeMonth(-1));
 document.getElementById('next-month').addEventListener('click',()=>changeMonth(1));
 document.getElementById('add-cat-btn').addEventListener('click',openAddCatModal);
