@@ -913,45 +913,54 @@
 
 <!-- RECONCILE MODAL -->
 <div class="modal-overlay" id="reconcile-modal">
-  <div class="modal" style="width:400px;max-width:calc(100vw - 2rem);">
-    <!-- Step 1: confirm cleared balance -->
+  <div class="modal" style="width:420px;max-width:calc(100vw - 2rem);max-height:calc(100vh - 2rem);overflow-y:auto;">
+
+    <!-- Step 1: show cleared balance + ask -->
     <div id="reconcile-step-1">
-      <h3 style="display:flex;align-items:center;gap:8px;"><i class="ti ti-checkup-list" style="color:#2a4fd4;"></i> Reconcile</h3>
-      <p style="font-size:13px;color:var(--text-secondary);margin:10px 0 18px;line-height:1.6;">Is your current cleared balance in Gato's Budget correct?</p>
-      <div style="background:var(--surface);border-radius:10px;padding:16px;text-align:center;margin-bottom:20px;">
-        <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">Cleared Balance</div>
-        <div style="font-family:var(--mono);font-size:32px;font-weight:700;color:var(--mint);" id="reconcile-cleared-display">$0.00</div>
+      <h3 style="display:flex;align-items:center;gap:8px;margin-bottom:14px;"><i class="ti ti-checkup-list" style="color:#2a4fd4;font-size:20px;"></i> Reconcile Account</h3>
+
+      <!-- Cleared balance display -->
+      <div style="background:var(--surface);border-radius:12px;padding:16px;margin-bottom:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <div style="font-size:11px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--text-muted);">Cleared Balance in App</div>
+          <div style="font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:4px;"><span class="cleared-dot"></span> Cleared only</div>
+        </div>
+        <div style="font-family:var(--mono);font-size:36px;font-weight:700;line-height:1;" id="reconcile-cleared-display">$0.00</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:8px;">Sum of all <strong>cleared ●</strong> transactions. Uncleared transactions are excluded.</div>
       </div>
-      <div style="font-size:12px;color:var(--text-muted);text-align:center;margin-bottom:18px;">This is the sum of all your <strong>cleared</strong> transactions in this account.</div>
+
+      <!-- Bank balance input — always shown -->
+      <div style="margin-bottom:16px;">
+        <label style="display:block;font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:6px;">What does your bank statement show right now?</label>
+        <input type="number" id="reconcile-bank-bal" placeholder="Enter your actual bank balance" step="0.01"
+          style="width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:18px;font-family:var(--mono);text-align:center;background:var(--surface-card);color:var(--text-primary);outline:none;transition:border-color .15s,box-shadow .15s;"
+          onfocus="this.style.borderColor='#2a4fd4';this.style.boxShadow='0 0 0 3px rgba(42,79,212,.12)'"
+          onblur="this.style.borderColor='var(--border)';this.style.boxShadow='none'"
+          onkeydown="if(event.key==='Enter')goReconcileStep2()">
+        <div id="reconcile-diff-preview" style="margin-top:10px;padding:10px 14px;border-radius:8px;font-size:13px;display:none;"></div>
+      </div>
+
+      <div style="background:var(--surface);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--text-muted);margin-bottom:16px;display:flex;gap:7px;align-items:flex-start;">
+        <i class="ti ti-lock" style="flex-shrink:0;font-size:14px;margin-top:1px;"></i>
+        <span>Your balance stays on your device — it's never sent anywhere.</span>
+      </div>
+
       <div class="modal-footer">
         <button class="btn-ghost" onclick="closeReconcileModal()">Cancel</button>
-        <button class="btn-ghost" onclick="goReconcileStep2('no')" style="flex:1;background:var(--surface);">No</button>
-        <button class="btn-modal-confirm" onclick="goReconcileStep2('yes')">Yes</button>
+        <button class="btn-modal-confirm" id="reconcile-next-btn" onclick="goReconcileStep2()" style="display:flex;align-items:center;justify-content:center;gap:7px;"><i class="ti ti-arrow-right"></i> Next</button>
       </div>
     </div>
-    <!-- Step 2: enter bank balance -->
+
+    <!-- Step 2: result -->
     <div id="reconcile-step-2" style="display:none;">
-      <h3 style="display:flex;align-items:center;gap:8px;"><i class="ti ti-building-bank" style="color:#2a4fd4;"></i> Enter Bank Balance</h3>
-      <p style="font-size:13px;color:var(--text-secondary);margin:10px 0 18px;line-height:1.6;">What is the current balance shown in your online banking or bank statement?</p>
-      <div class="field">
-        <label>Current balance at your bank</label>
-        <input type="number" id="reconcile-bank-bal" placeholder="0.00" step="0.01" style="font-size:18px;font-family:var(--mono);text-align:center;padding:12px;" autofocus>
-      </div>
-      <div style="font-size:12px;color:var(--text-muted);text-align:center;margin-bottom:18px;display:flex;align-items:center;justify-content:center;gap:5px;"><i class="ti ti-lock" style="font-size:13px;"></i> Your data never leaves your device.</div>
+      <h3 style="display:flex;align-items:center;gap:8px;margin-bottom:16px;" id="reconcile-step2-title"></h3>
+      <div id="reconcile-step2-body" style="margin-bottom:16px;"></div>
       <div class="modal-footer">
-        <button class="btn-ghost" onclick="closeReconcileModal()">Cancel</button>
-        <button class="btn-modal-confirm" onclick="goReconcileStep3()">Next</button>
+        <button class="btn-ghost" onclick="goBackReconcile()"><i class="ti ti-arrow-left"></i> Back</button>
+        <button class="btn-modal-confirm" id="reconcile-confirm-btn" onclick="confirmReconcile()" style="display:flex;align-items:center;justify-content:center;gap:7px;"></button>
       </div>
     </div>
-    <!-- Step 3: difference summary -->
-    <div id="reconcile-step-3" style="display:none;">
-      <h3 style="display:flex;align-items:center;gap:8px;" id="reconcile-step3-title"><i class="ti ti-circle-check" style="color:var(--mint);"></i> Ready to finish</h3>
-      <div id="reconcile-step3-body" style="margin:14px 0 18px;"></div>
-      <div class="modal-footer">
-        <button class="btn-ghost" onclick="closeReconcileModal()">Cancel</button>
-        <button class="btn-modal-confirm" id="reconcile-confirm-btn" onclick="confirmReconcile()">Finish &amp; Lock</button>
-      </div>
-    </div>
+
   </div>
 </div>
 
@@ -2635,84 +2644,99 @@ function clearedBalance(acctId){
 function startReconcile(){
   if(!currentAcctId){toast('Select an account first','error');return;}
   const cleared=clearedBalance(currentAcctId);
-  document.getElementById('reconcile-cleared-display').textContent=fmt(cleared);
-  // Reset steps
+
+  // Reset
   document.getElementById('reconcile-step-1').style.display='';
   document.getElementById('reconcile-step-2').style.display='none';
-  document.getElementById('reconcile-step-3').style.display='none';
   document.getElementById('reconcile-bank-bal').value='';
+  document.getElementById('reconcile-diff-preview').style.display='none';
   reconcileBankBalance=null;
+
+  // Show cleared balance coloured by sign
+  const dispEl=document.getElementById('reconcile-cleared-display');
+  dispEl.textContent=fmt(cleared);
+  dispEl.style.color=cleared<0?'var(--coral)':cleared===0?'var(--text-muted)':'var(--mint)';
+
   document.getElementById('reconcile-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('reconcile-bank-bal').focus(),80);
+
+  // Live diff preview as user types
+  const inp=document.getElementById('reconcile-bank-bal');
+  inp.oninput=()=>{
+    const bankBal=parseFloat(inp.value);
+    const preview=document.getElementById('reconcile-diff-preview');
+    if(isNaN(bankBal)){preview.style.display='none';return;}
+    const diff=bankBal-cleared;
+    if(Math.abs(diff)<0.005){
+      preview.style.cssText='display:block;background:var(--mint-light);color:#0a6b4e;border-radius:8px;padding:10px 14px;font-size:13px;';
+      preview.innerHTML=`<i class="ti ti-circle-check"></i> <strong>Balances match!</strong> No adjustment needed.`;
+    } else {
+      preview.style.cssText=`display:block;background:${diff<0?'var(--coral-light)':'var(--amber-light)'};color:${diff<0?'#b03a2b':'#7a4a05'};border-radius:8px;padding:10px 14px;font-size:13px;`;
+      preview.innerHTML=`Difference: <strong>${fmt(Math.abs(diff))}</strong> — ${diff>0?'app is lower than bank':'app is higher than bank'}`;
+    }
+  };
+  inp.onkeydown=e=>{if(e.key==='Enter')goReconcileStep2();};
 }
 
 function closeReconcileModal(){
   document.getElementById('reconcile-modal').classList.remove('open');
 }
 
-function goReconcileStep2(answer){
-  if(answer==='yes'){
-    // Cleared balance confirmed — go straight to enter bank balance
-    document.getElementById('reconcile-step-1').style.display='none';
-    document.getElementById('reconcile-step-2').style.display='';
-    setTimeout(()=>document.getElementById('reconcile-bank-bal').focus(),60);
-  } else {
-    // Not matching — close and let them fix cleared transactions first
-    closeReconcileModal();
-    toast('Mark the right transactions as cleared, then reconcile again');
-    // Switch to uncleared tab so they can see what needs fixing
-    setAcctTab('uncleared');
-  }
+function goBackReconcile(){
+  document.getElementById('reconcile-step-2').style.display='none';
+  document.getElementById('reconcile-step-1').style.display='';
+  setTimeout(()=>document.getElementById('reconcile-bank-bal').focus(),80);
 }
 
-function goReconcileStep3(){
+function goReconcileStep2(){
   const bankBal=parseFloat(document.getElementById('reconcile-bank-bal').value);
-  if(isNaN(bankBal)){toast('Enter your bank balance','error');return;}
+  if(isNaN(bankBal)){
+    toast('Enter your bank balance to continue','error');
+    document.getElementById('reconcile-bank-bal').focus();
+    return;
+  }
   reconcileBankBalance=bankBal;
   const cleared=clearedBalance(currentAcctId);
   const diff=bankBal-cleared;
-  const absDiff=Math.abs(diff);
 
-  document.getElementById('reconcile-step-2').style.display='none';
-  document.getElementById('reconcile-step-3').style.display='';
+  document.getElementById('reconcile-step-1').style.display='none';
+  document.getElementById('reconcile-step-2').style.display='';
 
-  const step3Title=document.getElementById('reconcile-step3-title');
-  const step3Body=document.getElementById('reconcile-step3-body');
+  const titleEl=document.getElementById('reconcile-step2-title');
+  const bodyEl=document.getElementById('reconcile-step2-body');
   const confirmBtn=document.getElementById('reconcile-confirm-btn');
 
   if(Math.abs(diff)<0.005){
-    // Perfect match
-    step3Title.innerHTML=`<i class="ti ti-circle-check" style="color:var(--mint);font-size:20px;"></i> Everything matches!`;
-    step3Body.innerHTML=`<div style="background:var(--mint-light);border-radius:10px;padding:16px;text-align:center;">
-      <div style="font-size:13px;color:#0a6b4e;margin-bottom:6px;">Your cleared balance matches your bank.</div>
-      <div style="font-family:var(--mono);font-size:24px;font-weight:700;color:var(--mint);">${fmt(cleared)}</div>
-      <div style="font-size:11px;color:#0a6b4e;margin-top:4px;">All cleared transactions will be locked.</div>
-    </div>`;
-    confirmBtn.textContent='Finish & Lock';
+    titleEl.innerHTML=`<i class="ti ti-circle-check" style="color:var(--mint);font-size:22px;"></i> Everything matches!`;
+    bodyEl.innerHTML=`
+      <div style="background:var(--mint-light);border-radius:12px;padding:18px;text-align:center;margin-bottom:14px;">
+        <div style="font-size:13px;color:#0a6b4e;margin-bottom:8px;">Your cleared balance matches your bank perfectly.</div>
+        <div style="font-family:var(--mono);font-size:28px;font-weight:700;color:var(--mint);">${fmt(cleared)}</div>
+      </div>
+      <div style="font-size:12px;color:var(--text-secondary);line-height:1.6;">All cleared transactions will be <strong>locked</strong> and marked as reconciled.</div>`;
+    confirmBtn.innerHTML='<i class="ti ti-lock"></i> Finish & Lock';
     confirmBtn.style.background='var(--mint)';
   } else {
-    // Difference found
-    const direction=diff>0?'lower':'higher';
-    step3Title.innerHTML=`<i class="ti ti-alert-triangle" style="color:var(--amber);font-size:20px;"></i> Difference found`;
-    step3Body.innerHTML=`<div style="background:var(--amber-light);border-radius:10px;padding:14px;margin-bottom:14px;">
-      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;">
-        <span style="color:var(--text-secondary);">Your bank balance</span>
-        <span style="font-family:var(--mono);font-weight:600;">${fmt(bankBal)}</span>
+    titleEl.innerHTML=`<i class="ti ti-adjustments" style="color:var(--amber);font-size:22px;"></i> Difference found`;
+    bodyEl.innerHTML=`
+      <div style="background:var(--amber-light);border-radius:12px;padding:14px;margin-bottom:14px;">
+        <div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-bottom:.5px solid rgba(0,0,0,.08);margin-bottom:6px;">
+          <span style="color:var(--text-secondary);">Your bank balance</span>
+          <span style="font-family:var(--mono);font-weight:600;">${fmt(bankBal)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-bottom:.5px solid rgba(0,0,0,.08);margin-bottom:6px;">
+          <span style="color:var(--text-secondary);">Cleared balance in app</span>
+          <span style="font-family:var(--mono);font-weight:600;">${fmt(cleared)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;padding-top:4px;">
+          <span>Difference</span>
+          <span style="font-family:var(--mono);color:${diff<0?'var(--coral)':'var(--amber)'};">${diff>0?'+':''}${fmt(diff)}</span>
+        </div>
       </div>
-      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;">
-        <span style="color:var(--text-secondary);">Cleared balance</span>
-        <span style="font-family:var(--mono);font-weight:600;">${fmt(cleared)}</span>
-      </div>
-      <div style="border-top:.5px solid rgba(0,0,0,.1);margin:8px 0;"></div>
-      <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:600;">
-        <span>Difference</span>
-        <span style="font-family:var(--mono);color:var(--amber);">${diff>0?'+':''}${fmt(diff)}</span>
-      </div>
-    </div>
-    <div style="font-size:13px;color:var(--text-secondary);line-height:1.6;">
-      Your cleared balance is <strong>${fmt(absDiff)}</strong> ${direction} than your bank. 
-      Clicking <strong>Create Adjustment</strong> will add a balancing transaction to fix the difference.
-    </div>`;
-    confirmBtn.textContent='Create Adjustment & Finish';
+      <div style="background:var(--surface);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--text-secondary);line-height:1.6;">
+        An adjustment transaction of <strong>${fmt(Math.abs(diff))}</strong> will be created to ${diff>0?'add':'remove'} funds and make the balances match. It will appear in your register as <em>Reconciliation Adjustment</em>.
+      </div>`;
+    confirmBtn.innerHTML=`<i class="ti ti-adjustments"></i> Create Adjustment & Finish`;
     confirmBtn.style.background='var(--amber)';
   }
 }
@@ -2722,36 +2746,32 @@ function confirmReconcile(){
   const cleared=clearedBalance(currentAcctId);
   const diff=reconcileBankBalance!==null?reconcileBankBalance-cleared:0;
 
-  // Create adjustment transaction if needed
   if(Math.abs(diff)>=0.005&&reconcileBankBalance!==null){
     const today=new Date().toISOString().slice(0,10);
-    const month=today.slice(0,7);
-    const adjType=diff>0?'income':'expense';
     transactions.push({
-      id:uid(),type:adjType,amount:Math.abs(diff),
-      payee:'Reconciliation Adjustment',memo:'Auto-created during reconcile',
-      date:today,month,accountId:currentAcctId,categoryId:null,
-      toAccountId:null,cleared:true,_ts:Date.now()
+      id:uid(),type:diff>0?'income':'expense',amount:Math.abs(diff),
+      payee:'Reconciliation Adjustment',
+      memo:`Bank: ${fmt(reconcileBankBalance)} vs cleared: ${fmt(cleared)}`,
+      date:today,month:today.slice(0,7),
+      accountId:currentAcctId,categoryId:null,toAccountId:null,
+      cleared:true,_ts:Date.now()
     });
   }
 
-  // Lock all currently-cleared transactions for this account
   transactions.forEach(t=>{
     if(t.cleared&&(t.accountId===currentAcctId||t.toAccountId===currentAcctId))t.reconciled=true;
   });
-
-  // Save reconcile date on account
   acct.lastReconciled=new Date().toISOString().slice(0,10);
 
   closeReconcileModal();
   renderAccountView(currentAcctId);
   renderSidebar();
   scheduleSave();
-  toast('Account reconciled ✓');
+  toast(Math.abs(diff)>=0.005?`Adjustment of ${fmt(Math.abs(diff))} created — reconciled ✓`:'Account reconciled ✓');
 }
 
 function cancelReconcile(){
-  document.getElementById('acct-reconcile-bar').style.display='none';
+  document.getElementById('acct-reconcile-bar')?.style && (document.getElementById('acct-reconcile-bar').style.display='none');
 }
 
 // ── EDIT ACCOUNT ──────────────────────────────────────────────────
