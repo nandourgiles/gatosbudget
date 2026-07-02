@@ -347,14 +347,14 @@
 <body>
 
 <header>
-  <div class="logo"><i class="ti ti-cat"></i> Gato's<span>Budget</span></div>
+  <div class="logo"><i class="ti ti-cat"></i> Gato's<span id="logo-budget-name">Budget</span></div>
   <nav>
     <button id="nav-budget" class="active"><i class="ti ti-layout-list"></i> Budget</button>
     <button id="nav-all-txns"><i class="ti ti-receipt"></i> Transactions</button>
     <button id="nav-reports"><i class="ti ti-chart-bar"></i> Reports</button>
     <button id="nav-import" style="border:.5px solid rgba(255,255,255,.2);"><i class="ti ti-file-import"></i> Import YNAB</button>
     <button id="nav-export" style="border:.5px solid rgba(255,255,255,.2);"><i class="ti ti-file-export"></i> Export</button>
-    <button id="nav-new-year" style="border:.5px solid rgba(125,232,184,.35);color:#7de8b8;"><i class="ti ti-calendar-plus"></i> New Year</button>
+    <button id="nav-new-year" style="border:.5px solid rgba(125,232,184,.35);color:#7de8b8;"><i class="ti ti-calendar-plus"></i> New Budget</button>
     <button id="nav-fresh-start" style="border:.5px solid rgba(224,83,64,.4);color:var(--coral);"><i class="ti ti-plant"></i> Fresh Start</button>
   </nav>
 </header>
@@ -710,14 +710,24 @@
   </div>
 </div>
 
-<!-- NEW BUDGET YEAR MODAL -->
+<!-- NEW BUDGET MODAL -->
 <div class="modal-overlay" id="new-year-modal">
   <div class="modal" style="width:460px;max-width:calc(100vw - 2rem);max-height:calc(100vh - 2rem);overflow-y:auto;">
-    <h3 style="display:flex;align-items:center;gap:8px;color:var(--mint);"><i class="ti ti-calendar-plus"></i> New Budget Year</h3>
-    <p style="font-size:13px;color:var(--text-secondary);margin:8px 0 16px;line-height:1.6;">Start a fresh budget year while keeping everything you've built. Your current data will be <strong>automatically archived to Google Drive</strong> before anything changes.</p>
+    <h3 style="display:flex;align-items:center;gap:8px;color:var(--mint);"><i class="ti ti-calendar-plus"></i> New Budget</h3>
+    <p style="font-size:13px;color:var(--text-secondary);margin:8px 0 16px;line-height:1.6;">Start a fresh budget while keeping everything you've built. Your current data will be <strong>automatically archived to Google Drive</strong> before anything changes.</p>
+
+    <!-- Budget name -->
+    <div style="border:1.5px solid var(--mint);border-radius:10px;padding:14px;margin-bottom:14px;background:var(--mint-light);">
+      <div style="font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#0a6b4e;margin-bottom:10px;display:flex;align-items:center;gap:6px;"><i class="ti ti-tag"></i> Budget Name</div>
+      <input type="text" id="ny-budget-name" placeholder="e.g. Summer 2026, Second Half 2026…"
+        style="width:100%;padding:10px 12px;border:.5px solid rgba(26,170,124,.4);border-radius:8px;font-size:14px;font-weight:600;background:#fff;color:var(--text-primary);outline:none;transition:box-shadow .15s;"
+        onfocus="this.style.boxShadow='0 0 0 3px rgba(26,170,124,.2)'"
+        onblur="this.style.boxShadow='none'">
+      <div style="font-size:11px;color:#0a6b4e;margin-top:6px;">This name will appear in the logo and header. Leave blank to keep the current name.</div>
+    </div>
 
     <!-- What carries over -->
-    <div style="background:var(--mint-light);border-radius:10px;padding:14px;margin-bottom:14px;">
+    <div style="background:#f4faf7;border-radius:10px;padding:14px;margin-bottom:14px;border:.5px solid #d0ead9;">
       <div style="font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#0a6b4e;margin-bottom:10px;display:flex;align-items:center;gap:6px;"><i class="ti ti-circle-check"></i> What carries over</div>
       <div style="display:flex;flex-direction:column;gap:6px;">
         <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#0a6b4e;"><i class="ti ti-layout-list" style="font-size:15px;flex-shrink:0;"></i> All categories &amp; groups</div>
@@ -729,9 +739,7 @@
     <!-- What resets -->
     <div style="background:var(--amber-light);border-radius:10px;padding:14px;margin-bottom:14px;">
       <div style="font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--amber);margin-bottom:10px;display:flex;align-items:center;gap:6px;"><i class="ti ti-refresh"></i> What resets</div>
-      <div style="display:flex;flex-direction:column;gap:6px;">
-        <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#7a4a05;"><i class="ti ti-currency-dollar" style="font-size:15px;flex-shrink:0;"></i> All assigned amounts reset to $0</div>
-      </div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#7a4a05;"><i class="ti ti-currency-dollar" style="font-size:15px;flex-shrink:0;"></i> All assigned amounts reset to $0</div>
     </div>
 
     <!-- Transactions choice -->
@@ -751,12 +759,12 @@
 
     <div style="background:var(--surface);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--text-secondary);margin-bottom:14px;display:flex;gap:8px;align-items:flex-start;">
       <i class="ti ti-cloud" style="color:var(--mint);flex-shrink:0;margin-top:1px;font-size:15px;"></i>
-      <span>A backup named <strong>zerobudget-backup-<span id="ny-year-label">2026</span>.json</strong> will be saved to your Google Drive before anything changes. You can restore it anytime.</span>
+      <span>A backup named <strong>zerobudget-backup-<span id="ny-year-label">2026</span>.json</strong> will be saved to your Google Drive before anything changes.</span>
     </div>
 
     <div class="modal-footer">
       <button class="btn-ghost" onclick="closeNewYearModal()">Cancel</button>
-      <button style="flex:1;padding:10px;background:linear-gradient(135deg,var(--navy),#25594a);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;" onclick="runNewYear()"><i class="ti ti-calendar-plus"></i> Archive &amp; Start New Year</button>
+      <button style="flex:1;padding:10px;background:linear-gradient(135deg,var(--navy),#25594a);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;" onclick="runNewYear()"><i class="ti ti-calendar-plus"></i> Archive &amp; Start New Budget</button>
     </div>
   </div>
 </div>
@@ -920,29 +928,30 @@
       <h3 style="display:flex;align-items:center;gap:8px;margin-bottom:14px;"><i class="ti ti-checkup-list" style="color:#2a4fd4;font-size:20px;"></i> Reconcile Account</h3>
 
       <!-- Cleared balance display -->
-      <div style="background:var(--surface);border-radius:12px;padding:16px;margin-bottom:16px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-          <div style="font-size:11px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--text-muted);">Cleared Balance in App</div>
+      <div style="background:var(--surface);border-radius:12px;padding:14px;margin-bottom:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+          <div style="font-size:11px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--text-muted);">Current Cleared Balance in App</div>
           <div style="font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:4px;"><span class="cleared-dot"></span> Cleared only</div>
         </div>
-        <div style="font-family:var(--mono);font-size:36px;font-weight:700;line-height:1;" id="reconcile-cleared-display">$0.00</div>
-        <div style="font-size:12px;color:var(--text-muted);margin-top:8px;">Sum of all <strong>cleared ●</strong> transactions. Uncleared transactions are excluded.</div>
+        <div style="font-family:var(--mono);font-size:30px;font-weight:700;line-height:1;" id="reconcile-cleared-display">$0.00</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Sum of all cleared ● transactions only — uncleared are excluded.</div>
       </div>
 
       <!-- Bank balance input — always shown -->
       <div style="margin-bottom:16px;">
-        <label style="display:block;font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:6px;">What does your bank statement show right now?</label>
-        <input type="number" id="reconcile-bank-bal" placeholder="Enter your actual bank balance" step="0.01"
-          style="width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:18px;font-family:var(--mono);text-align:center;background:var(--surface-card);color:var(--text-primary);outline:none;transition:border-color .15s,box-shadow .15s;"
-          onfocus="this.style.borderColor='#2a4fd4';this.style.boxShadow='0 0 0 3px rgba(42,79,212,.12)'"
-          onblur="this.style.borderColor='var(--border)';this.style.boxShadow='none'"
+        <label style="display:block;font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:8px;">Input your current bank balance</label>
+        <input type="number" id="reconcile-bank-bal" placeholder="e.g. 1834.78" step="0.01"
+          style="width:100%;padding:14px;border:2px solid #2a4fd4;border-radius:10px;font-size:22px;font-family:var(--mono);text-align:center;background:var(--surface-card);color:var(--text-primary);outline:none;transition:box-shadow .15s;box-shadow:0 0 0 3px rgba(42,79,212,.1);"
+          onfocus="this.style.boxShadow='0 0 0 4px rgba(42,79,212,.18)'"
+          onblur="this.style.boxShadow='0 0 0 3px rgba(42,79,212,.1)'"
           onkeydown="if(event.key==='Enter')goReconcileStep2()">
+        <div style="font-size:11px;color:var(--text-muted);margin-top:6px;text-align:center;">Type the balance shown in your online banking right now, then click Next</div>
         <div id="reconcile-diff-preview" style="margin-top:10px;padding:10px 14px;border-radius:8px;font-size:13px;display:none;"></div>
       </div>
 
       <div style="background:var(--surface);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--text-muted);margin-bottom:16px;display:flex;gap:7px;align-items:flex-start;">
         <i class="ti ti-lock" style="flex-shrink:0;font-size:14px;margin-top:1px;"></i>
-        <span>Your balance stays on your device — it's never sent anywhere.</span>
+        <span>Works on all accounts — Cash, Credit, and Investments. Your balance stays on your device and is never sent anywhere.</span>
       </div>
 
       <div class="modal-footer">
@@ -1074,6 +1083,7 @@ const FILE_NAME = 'zerobudget-data.json';
 
 // ── STATE ───────────────────────────────────────────────────────
 let categories=[], transactions=[], accounts=[];
+let budgetName='Budget'; // displayed in logo after "Gato's"
 let currentMonth=new Date().toISOString().slice(0,7);
 let txnType='income', txnFilter='all', acctTab='all', currentAcctId=null;
 let currentCatId=null, catViewMonth=new Date().toISOString().slice(0,7);
@@ -1151,7 +1161,7 @@ async function loadFromDrive(){
   try{
     driveFileId=await findOrCreateFile();
     const r=await fetch(`https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`,{headers:{Authorization:'Bearer '+accessToken}});
-    if(r.status===200){const t=await r.text();if(t&&t.trim().startsWith('{')){const d=JSON.parse(t);categories=d.categories||[];transactions=d.transactions||[];accounts=d.accounts||[];}}
+    if(r.status===200){const t=await r.text();if(t&&t.trim().startsWith('{')){const d=JSON.parse(t);categories=d.categories||[];transactions=d.transactions||[];accounts=d.accounts||[];budgetName=d.budgetName||'Budget';updateLogoName();}}
     setSyncStatus('synced','Up to date');lastSyncTime=new Date();renderAll();
   }catch(e){setSyncStatus('error','Could not load');toast('Could not load from Drive','error');renderAll();}
 }
@@ -1159,7 +1169,7 @@ async function saveToDrive(){
   if(!accessToken||!driveFileId)return;
   setSyncStatus('syncing','Saving…');
   try{
-    const payload=JSON.stringify({categories,transactions,accounts,savedAt:new Date().toISOString()});
+    const payload=JSON.stringify({categories,transactions,accounts,budgetName,savedAt:new Date().toISOString()});
     const boundary='zb_boundary';
     const body=`--${boundary}\r\nContent-Type: application/json\r\n\r\n${JSON.stringify({name:FILE_NAME})}\r\n--${boundary}\r\nContent-Type: application/json\r\n\r\n${payload}\r\n--${boundary}--`;
     await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=multipart`,{method:'PATCH',headers:{'Authorization':'Bearer '+accessToken,'Content-Type':`multipart/related; boundary=${boundary}`},body});
@@ -1210,7 +1220,7 @@ function groupCategories(){const g={};categories.forEach(c=>{const k=c.group||'U
 function formatDate(d){if(!d)return'';const[y,m,day]=d.split('-');return`${+m}/${+day}/${y}`;}
 
 // ── RENDER ALL ────────────────────────────────────────────────────
-function renderAll(){renderATB();renderCategories();renderCategorySelect();renderAccountSelect();renderSidebar();renderRecentTxns();renderAllTxns();renderMonthLabel();if(currentAcctId)renderAccountView(currentAcctId);if(currentCatId&&document.getElementById('view-category').style.display!=='none')renderCategoryView();}
+function renderAll(){updateLogoName();renderATB();renderCategories();renderCategorySelect();renderAccountSelect();renderSidebar();renderRecentTxns();renderAllTxns();renderMonthLabel();if(currentAcctId)renderAccountView(currentAcctId);if(currentCatId&&document.getElementById('view-category').style.display!=='none')renderCategoryView();}
 
 function renderATB(){
   const{totalIncome,totalAssigned,totalActivity,atb}=calcStats();
@@ -2340,22 +2350,22 @@ function openNewYearModal(){
   const year=new Date().getFullYear().toString();
   document.getElementById('ny-year-label').textContent=year;
   document.getElementById('ny-keep').checked=true;
+  // Pre-fill name field with a suggestion
+  document.getElementById('ny-budget-name').value='';
+  document.getElementById('ny-budget-name').placeholder=`e.g. ${year} Budget, Summer ${year}…`;
   document.getElementById('new-year-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('ny-budget-name').focus(),80);
 }
 function closeNewYearModal(){document.getElementById('new-year-modal').classList.remove('open');}
 
 async function runNewYear(){
   const btn=document.querySelector('#new-year-modal .modal-footer button:last-child');
   btn.textContent='Archiving…';btn.disabled=true;
-
   try{
-    // 1. Save archive to Drive with year-stamped filename
     const year=new Date().getFullYear().toString();
     const archiveName=`zerobudget-backup-${year}.json`;
-    const payload=JSON.stringify({categories,transactions,accounts,archivedAt:new Date().toISOString(),year});
-
+    const payload=JSON.stringify({categories,transactions,accounts,budgetName,archivedAt:new Date().toISOString(),year});
     if(accessToken){
-      // Create a new Drive file for the archive
       const boundary='zb_archive_boundary';
       const body=`--${boundary}\r\nContent-Type: application/json\r\n\r\n${JSON.stringify({name:archiveName,parents:['appDataFolder']})}\r\n--${boundary}\r\nContent-Type: application/json\r\n\r\n${payload}\r\n--${boundary}--`;
       await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{
@@ -2364,28 +2374,29 @@ async function runNewYear(){
         body
       });
     }
-
-    // 2. Reset assigned amounts across all categories
+    // Apply new budget name if provided
+    const newName=document.getElementById('ny-budget-name').value.trim();
+    if(newName) budgetName=newName;
+    // Reset assigned amounts
     categories.forEach(c=>{c.assigned={};});
-
-    // 3. Optionally clear transactions
-    const clearTxns=document.getElementById('ny-clear').checked;
-    if(clearTxns){
-      transactions=[];
-    }
-
-    // 4. Jump to January of next year
-    const nextYear=(parseInt(year)+1).toString();
-    currentMonth=`${nextYear}-01`;
-
+    // Optionally clear transactions
+    if(document.getElementById('ny-clear').checked) transactions=[];
+    // Jump to January of next year
+    currentMonth=`${parseInt(year)+1}-01`;
+    updateLogoName();
     closeNewYearModal();
     renderAll();
     scheduleSave();
-    toast(`✓ ${year} archived to Drive — welcome to ${nextYear}!`);
+    toast(`✓ ${year} archived — welcome to ${budgetName}!`);
   }catch(e){
     toast('Archive failed: '+e.message,'error');
-    btn.textContent='Archive & Start New Year';btn.disabled=false;
+    btn.textContent='Archive & Start New Budget';btn.disabled=false;
   }
+}
+
+function updateLogoName(){
+  const el=document.getElementById('logo-budget-name');
+  if(el) el.textContent=budgetName||'Budget';
 }
 
 // ── FRESH START ───────────────────────────────────────────────────
