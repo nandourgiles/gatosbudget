@@ -359,6 +359,7 @@
   .cleared-dot{width:6px;height:6px;border-radius:50%;background:var(--mint);display:inline-block;}
   .uncleared-dot{width:6px;height:6px;border-radius:50%;background:var(--amber);display:inline-block;}
 
+  @keyframes spin{to{transform:rotate(360deg)}}
   /* ── MODALS ── */
   .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:flex-start;justify-content:center;padding:1rem;overflow-y:auto;}
   .modal-overlay.open{display:flex;}
@@ -501,6 +502,7 @@
     <button id="nav-all-txns"><i class="ti ti-receipt"></i> Transactions</button>
     <button id="nav-reports"><i class="ti ti-chart-bar"></i> Reports</button>
     <button id="nav-import" style="border:.5px solid rgba(255,255,255,.2);"><i class="ti ti-file-import"></i> Import YNAB</button>
+    <button id="nav-smart-import" style="border:.5px solid rgba(125,232,184,.35);color:#7de8b8;"><i class="ti ti-sparkles"></i> Smart Import</button>
     <button id="nav-export" style="border:.5px solid rgba(255,255,255,.2);"><i class="ti ti-file-export"></i> Export</button>
     <button id="nav-new-year" style="border:.5px solid rgba(125,232,184,.35);color:#7de8b8;"><i class="ti ti-calendar-plus"></i> New Budget</button>
     <button id="nav-fresh-start" style="border:.5px solid rgba(224,83,64,.4);color:var(--coral);"><i class="ti ti-plant"></i> Fresh Start</button>
@@ -579,6 +581,9 @@
       <div style="padding:0 6px 12px;">
         <button onclick="openImportModal();closeMobMore();" style="width:100%;padding:14px 16px;background:none;border:none;border-radius:10px;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:12px;color:var(--text-primary);text-align:left;" onmouseenter="this.style.background='var(--surface)'" onmouseleave="this.style.background='none'">
           <i class="ti ti-file-import" aria-hidden="true" style="font-size:20px;color:var(--mint);width:24px;"></i> Import YNAB
+        </button>
+        <button onclick="openSmartImport();closeMobMore();" style="width:100%;padding:14px 16px;background:none;border:none;border-radius:10px;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:12px;color:var(--text-primary);text-align:left;" onmouseenter="this.style.background='var(--surface)'" onmouseleave="this.style.background='none'">
+          <i class="ti ti-sparkles" aria-hidden="true" style="font-size:20px;color:#7de8b8;width:24px;"></i> Smart Import
         </button>
         <button onclick="openExportModal();closeMobMore();" style="width:100%;padding:14px 16px;background:none;border:none;border-radius:10px;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:12px;color:var(--text-primary);text-align:left;" onmouseenter="this.style.background='var(--surface)'" onmouseleave="this.style.background='none'">
           <i class="ti ti-file-export" aria-hidden="true" style="font-size:20px;color:var(--mint);width:24px;"></i> Export
@@ -930,6 +935,68 @@
             </table>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SMART IMPORT MODAL -->
+<div class="modal-overlay" id="smart-import-modal">
+  <div class="modal" style="width:560px;max-width:calc(100vw - 2rem);max-height:calc(100vh - 2rem);overflow-y:auto;">
+    <h3 style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><i class="ti ti-sparkles" style="color:var(--mint);font-size:20px;"></i> Smart Import</h3>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;line-height:1.6;">Upload a bank statement (PDF) or a screenshot of your transactions. Claude will read it and extract all transactions — then you review before anything is saved.</p>
+
+    <!-- Step 1: Upload -->
+    <div id="si-step-1">
+      <div id="si-dropzone" style="border:2px dashed var(--border);border-radius:12px;padding:2rem;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;margin-bottom:14px;"
+        onclick="document.getElementById('si-file-input').click()"
+        ondragover="event.preventDefault();this.style.borderColor='var(--mint)';this.style.background='var(--mint-light)'"
+        ondragleave="this.style.borderColor='var(--border)';this.style.background=''"
+        ondrop="siHandleDrop(event)">
+        <i class="ti ti-cloud-upload" style="font-size:36px;color:var(--mint);display:block;margin-bottom:8px;"></i>
+        <div style="font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:4px;">Drop your file here or click to browse</div>
+        <div style="font-size:12px;color:var(--text-muted);">PDF bank statements · PNG/JPG screenshots · up to 10MB</div>
+        <input type="file" id="si-file-input" accept=".pdf,.png,.jpg,.jpeg,.webp" style="display:none;" onchange="siHandleFile(this.files[0])">
+      </div>
+      <div id="si-file-preview" style="display:none;background:var(--surface);border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:14px;align-items:center;gap:10px;">
+        <i class="ti ti-file-check" style="font-size:20px;color:var(--mint);flex-shrink:0;"></i>
+        <span id="si-file-name" style="font-weight:500;flex:1;"></span>
+        <button onclick="siClearFile()" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:14px;"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="field" style="margin-bottom:14px;">
+        <label>Which account are these transactions from?</label>
+        <select id="si-account-select" style="width:100%;padding:8px 11px;border:.5px solid var(--border);border-radius:7px;font-size:13px;background:var(--surface);outline:none;">
+          <option value="">— Select account —</option>
+        </select>
+      </div>
+      <div style="background:var(--surface);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--text-muted);margin-bottom:14px;display:flex;gap:7px;align-items:flex-start;">
+        <i class="ti ti-shield-check" style="flex-shrink:0;font-size:14px;margin-top:1px;color:var(--mint);"></i>
+        <span>Your file is sent to Claude's API only for reading — it is never stored. Your budget data stays in Google Drive as always.</span>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" onclick="closeSmartImport()">Cancel</button>
+        <button id="si-analyse-btn" onclick="siAnalyse()" style="flex:1;padding:10px;background:linear-gradient(135deg,var(--navy),#25594a);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;"><i class="ti ti-sparkles"></i> Analyse with Claude</button>
+      </div>
+    </div>
+
+    <!-- Step 2: Processing -->
+    <div id="si-step-2" style="display:none;text-align:center;padding:2rem 1rem;">
+      <div style="width:48px;height:48px;border:3px solid var(--mint-light);border-top-color:var(--mint);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 16px;"></div>
+      <div style="font-size:15px;font-weight:600;color:var(--text-primary);margin-bottom:6px;">Claude is reading your statement…</div>
+      <div id="si-progress-msg" style="font-size:13px;color:var(--text-muted);">Extracting transactions, dates and amounts</div>
+    </div>
+
+    <!-- Step 3: Review -->
+    <div id="si-step-3" style="display:none;">
+      <div id="si-summary-banner" style="border-radius:10px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px;"></div>
+      <div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
+        <span>Review — uncheck any transactions to skip</span>
+        <button onclick="siToggleAll()" id="si-toggle-all-btn" style="background:none;border:none;cursor:pointer;color:var(--mint);font-size:12px;font-weight:600;">Deselect all</button>
+      </div>
+      <div id="si-txn-review-list" style="border:.5px solid var(--border);border-radius:10px;overflow:hidden;max-height:340px;overflow-y:auto;margin-bottom:14px;"></div>
+      <div class="modal-footer">
+        <button class="btn-ghost" onclick="siGoBack()"><i class="ti ti-arrow-left"></i> Back</button>
+        <button id="si-confirm-btn" onclick="siConfirmImport()" style="flex:1;padding:10px;background:var(--mint);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;"><i class="ti ti-circle-check"></i> <span id="si-confirm-label">Import transactions</span></button>
       </div>
     </div>
   </div>
@@ -2570,6 +2637,221 @@ function renderReports(){
   }).join(''):'<div class="no-data"><i class="ti ti-target"></i>No goals set yet.</div>';
 }
 
+// ── SMART IMPORT ──────────────────────────────────────────────────
+let siFile=null, siExtracted=[];
+
+function openSmartImport(){
+  // Populate account selector
+  const sel=document.getElementById('si-account-select');
+  sel.innerHTML='<option value="">— Select account —</option>';
+  accounts.forEach(a=>{
+    const o=document.createElement('option');
+    o.value=a.id;o.textContent=a.name;
+    sel.appendChild(o);
+  });
+  // Reset to step 1
+  siFile=null;siExtracted=[];
+  siShowStep(1);
+  document.getElementById('si-file-preview').style.display='none';
+  document.getElementById('si-dropzone').style.display='';
+  document.getElementById('si-file-input').value='';
+  document.getElementById('smart-import-modal').classList.add('open');
+}
+function closeSmartImport(){
+  document.getElementById('smart-import-modal').classList.remove('open');
+}
+function siShowStep(n){
+  [1,2,3].forEach(i=>document.getElementById('si-step-'+i).style.display=i===n?'':'none');
+}
+function siHandleDrop(e){
+  e.preventDefault();
+  document.getElementById('si-dropzone').style.borderColor='var(--border)';
+  document.getElementById('si-dropzone').style.background='';
+  const file=e.dataTransfer.files[0];
+  if(file)siHandleFile(file);
+}
+function siHandleFile(file){
+  if(!file)return;
+  if(file.size>10*1024*1024){toast('File too large — max 10MB','error');return;}
+  siFile=file;
+  document.getElementById('si-file-name').textContent=`${file.name} (${(file.size/1024).toFixed(0)} KB)`;
+  document.getElementById('si-file-preview').style.display='flex';
+  document.getElementById('si-dropzone').style.display='none';
+}
+function siClearFile(){
+  siFile=null;
+  document.getElementById('si-file-preview').style.display='none';
+  document.getElementById('si-dropzone').style.display='';
+  document.getElementById('si-file-input').value='';
+}
+function siGoBack(){siShowStep(1);}
+
+async function siAnalyse(){
+  if(!siFile){toast('Please upload a file first','error');return;}
+  const acctId=document.getElementById('si-account-select').value;
+  if(!acctId){toast('Select an account','error');return;}
+
+  siShowStep(2);
+
+  try{
+    // Convert file to base64
+    const base64=await new Promise((res,rej)=>{
+      const r=new FileReader();
+      r.onload=()=>res(r.result.split(',')[1]);
+      r.onerror=rej;
+      r.readAsDataURL(siFile);
+    });
+
+    const isPDF=siFile.type==='application/pdf'||siFile.name.endsWith('.pdf');
+    const mediaType=isPDF?'application/pdf':(siFile.type||'image/jpeg');
+
+    // Build category list for matching
+    const catList=categories.map(c=>`${c.id}|${c.name}|${c.group||''}`).join('\n');
+    const acct=accounts.find(a=>a.id===acctId);
+
+    const prompt=`You are a financial data extraction assistant. Extract ALL transactions from this bank statement or screenshot.
+
+For each transaction return a JSON array with this exact format:
+[
+  {
+    "date": "YYYY-MM-DD",
+    "payee": "merchant or description name",
+    "amount": 12.34,
+    "type": "expense" or "income",
+    "suggestedCatId": "category_id or empty string",
+    "suggestedCatName": "category name or empty string"
+  }
+]
+
+Rules:
+- date must be YYYY-MM-DD format. If year is missing assume ${new Date().getFullYear()}.
+- amount must be a positive number (never negative).
+- type is "expense" for money leaving the account, "income" for money coming in.
+- For suggestedCatId and suggestedCatName: match the payee to the best category from this list:
+${catList}
+If no good match, leave both as empty string.
+- Ignore balance rows, opening/closing balance lines, and statement header info.
+- Return ONLY the JSON array, no other text, no markdown fences.`;
+
+    const body={
+      model:'claude-sonnet-4-6',
+      max_tokens:4000,
+      messages:[{
+        role:'user',
+        content:[
+          isPDF
+            ?{type:'document',source:{type:'base64',media_type:mediaType,data:base64}}
+            :{type:'image',source:{type:'base64',media_type:mediaType,data:base64}},
+          {type:'text',text:prompt}
+        ]
+      }]
+    };
+
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(body)
+    });
+    const data=await resp.json();
+    const raw=data.content?.find(b=>b.type==='text')?.text||'[]';
+    let parsed;
+    try{parsed=JSON.parse(raw.replace(/```json|```/g,'').trim());}
+    catch(e){throw new Error('Could not parse Claude response — try a clearer image');}
+
+    siExtracted=parsed.map((t,i)=>({...t,_id:'si_'+i,_acctId:acctId,_selected:true}));
+    siShowReview(acctId);
+
+  }catch(e){
+    siShowStep(1);
+    toast('Error: '+e.message,'error');
+  }
+}
+
+function siShowReview(acctId){
+  siShowStep(3);
+  const acct=accounts.find(a=>a.id===acctId);
+
+  // Summary banner
+  const income=siExtracted.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const expenses=siExtracted.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  const banner=document.getElementById('si-summary-banner');
+  banner.style.background='var(--mint-light)';
+  banner.style.color='#0a6b4e';
+  banner.innerHTML=`<i class="ti ti-circle-check" style="font-size:20px;flex-shrink:0;"></i>
+    <div>
+      <div style="font-weight:600;font-size:14px;">Found ${siExtracted.length} transactions from ${acct?.name||'account'}</div>
+      <div style="font-size:12px;margin-top:2px;">Income: <strong>${fmt(income)}</strong> &nbsp;·&nbsp; Expenses: <strong>${fmt(expenses)}</strong></div>
+    </div>`;
+
+  // Transaction list
+  const list=document.getElementById('si-txn-review-list');
+  list.innerHTML=siExtracted.map((t,i)=>{
+    const catOptions=categories.map(c=>`<option value="${c.id}"${c.id===t.suggestedCatId?' selected':''}>${c.name}</option>`).join('');
+    const isExp=t.type==='expense';
+    return`<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:.5px solid var(--border);${i===siExtracted.length-1?'border-bottom:none;':''}">
+      <input type="checkbox" id="si-chk-${i}" checked onchange="siUpdateCount()" style="width:16px;height:16px;accent-color:var(--mint);flex-shrink:0;">
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px;">
+          <div style="display:flex;align-items:center;gap:8px;min-width:0;">
+            <span style="font-size:11px;color:var(--text-muted);font-family:var(--mono);flex-shrink:0;">${t.date}</span>
+            <span style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.payee}</span>
+          </div>
+          <span style="font-family:var(--mono);font-size:13px;font-weight:600;flex-shrink:0;color:${isExp?'var(--coral)':'var(--mint)'};">${isExp?'-':'+'}&nbsp;${fmt(t.amount)}</span>
+        </div>
+        ${isExp?`<select onchange="siExtracted[${i}].suggestedCatId=this.value" style="width:100%;padding:4px 8px;border:.5px solid var(--border);border-radius:5px;font-size:11px;background:var(--surface);outline:none;">
+          <option value="">— Assign category —</option>${catOptions}
+        </select>`:`<span style="font-size:11px;color:var(--mint);">Income → Ready to Assign</span>`}
+      </div>
+    </div>`;
+  }).join('');
+
+  siUpdateCount();
+}
+
+function siUpdateCount(){
+  const checked=siExtracted.filter((_,i)=>document.getElementById('si-chk-'+i)?.checked).length;
+  document.getElementById('si-confirm-label').textContent=`Import ${checked} transaction${checked!==1?'s':''}`;
+  document.getElementById('si-toggle-all-btn').textContent=
+    checked===siExtracted.length?'Deselect all':'Select all';
+}
+
+function siToggleAll(){
+  const checked=siExtracted.filter((_,i)=>document.getElementById('si-chk-'+i)?.checked).length;
+  const newState=checked!==siExtracted.length;
+  siExtracted.forEach((_,i)=>{const el=document.getElementById('si-chk-'+i);if(el)el.checked=newState;});
+  siUpdateCount();
+}
+
+function siConfirmImport(){
+  const acctId=document.getElementById('si-account-select').value;
+  let count=0;
+  siExtracted.forEach((t,i)=>{
+    if(!document.getElementById('si-chk-'+i)?.checked)return;
+    const catSel=document.querySelector(`#si-txn-review-list select:nth-of-type(${i+1})`);
+    const catId=t.suggestedCatId||'';
+    transactions.push({
+      id:uid(),
+      type:t.type,
+      amount:t.amount,
+      payee:t.payee,
+      memo:'Smart Import',
+      date:t.date,
+      month:t.date.slice(0,7),
+      accountId:acctId,
+      categoryId:catId||null,
+      cleared:true,
+      _ts:Date.now()
+    });
+    count++;
+  });
+  closeSmartImport();
+  if(acctId)renderAccountView(acctId);
+  renderAll();
+  scheduleSave();
+  refreshPayeeSuggestions();
+  toast(`✓ ${count} transaction${count!==1?'s':''} imported successfully`);
+}
+
 // ── NEW BUDGET YEAR ───────────────────────────────────────────────
 function openNewYearModal(){
   const year=new Date().getFullYear().toString();
@@ -3372,6 +3654,7 @@ document.getElementById('nav-budget').addEventListener('click',()=>{showBudget()
 document.getElementById('nav-all-txns').addEventListener('click',()=>{showAllTxns();setActiveNav('nav-all-txns');});
 document.getElementById('nav-reports').addEventListener('click',()=>{showReports();setActiveNav('nav-reports');});
 document.getElementById('nav-import').addEventListener('click',openImportModal);
+document.getElementById('nav-smart-import').addEventListener('click',openSmartImport);
 document.getElementById('nav-export').addEventListener('click',openExportModal);
 document.getElementById('nav-new-year').addEventListener('click',openNewYearModal);
 document.getElementById('nav-fresh-start').addEventListener('click',openFreshStart);
@@ -3386,6 +3669,7 @@ document.getElementById('acct-modal').addEventListener('click',e=>{if(e.target==
 document.getElementById('import-modal').addEventListener('click',e=>{if(e.target===document.getElementById('import-modal'))closeImportModal();});
 document.getElementById('goal-modal').addEventListener('click',e=>{if(e.target===document.getElementById('goal-modal'))closeGoalModal();});
 document.getElementById('edit-acct-modal').addEventListener('click',e=>{if(e.target===document.getElementById('edit-acct-modal'))closeEditAcctModal();});
+document.getElementById('smart-import-modal').addEventListener('click',e=>{if(e.target===document.getElementById('smart-import-modal'))closeSmartImport();});
 document.getElementById('reconcile-modal').addEventListener('click',e=>{if(e.target===document.getElementById('reconcile-modal'))closeReconcileModal();});
 
 document.getElementById('txn-date').value=new Date().toISOString().slice(0,10);
