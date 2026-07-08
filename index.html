@@ -516,35 +516,52 @@
         </div>
 
         <!-- Inline add transaction row -->
-        <div id="acct-add-row" style="display:none;background:#fffdf0;border-bottom:.5px solid #f0e0a0;padding:10px 14px;">
-          <div style="display:grid;grid-template-columns:100px 1fr 1fr 1fr 90px 90px auto;gap:8px;align-items:center;">
+        <div id="acct-add-row" style="display:none;background:#fffdf0;border-bottom:.5px solid #f0e0a0;padding:12px 16px;">
+          <!-- Type toggle -->
+          <div style="display:flex;gap:6px;margin-bottom:10px;align-items:center;">
+            <div style="display:flex;background:#f5f7f4;border:.5px solid #d8e8df;border-radius:7px;overflow:hidden;flex-shrink:0;">
+              <button id="acct-add-type-income" onclick="setAcctAddType('income')" style="border:none;padding:6px 12px;font-size:12px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:4px;background:#e4f5ee;color:var(--mint);">
+                <i class="ti ti-arrow-down-circle"></i> Income
+              </button>
+              <button id="acct-add-type-expense" onclick="setAcctAddType('expense')" style="border:none;padding:6px 12px;font-size:12px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:4px;background:none;color:var(--text-muted);">
+                <i class="ti ti-arrow-up-circle"></i> Expense
+              </button>
+              <button id="acct-add-type-transfer" onclick="setAcctAddType('transfer')" style="border:none;padding:6px 12px;font-size:12px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:4px;background:none;color:var(--text-muted);">
+                <i class="ti ti-arrows-exchange"></i> Transfer
+              </button>
+            </div>
+            <span id="acct-add-type-hint" style="font-size:11px;color:var(--text-muted);"></span>
+          </div>
+          <!-- Fields -->
+          <div style="display:grid;grid-template-columns:100px 1fr 1fr 1fr 90px auto;gap:8px;align-items:end;" id="acct-add-fields">
             <div>
               <div style="font-size:10px;font-weight:600;color:var(--text-secondary);margin-bottom:3px;">Date</div>
               <input type="date" id="acct-add-date" style="width:100%;padding:6px 8px;border:.5px solid #f0e0a0;border-radius:6px;font-size:12px;background:#fff;outline:none;">
             </div>
             <div>
-              <div style="font-size:10px;font-weight:600;color:var(--text-secondary);margin-bottom:3px;">Payee</div>
+              <div style="font-size:10px;font-weight:600;color:var(--text-secondary);margin-bottom:3px;" id="acct-add-payee-label">Payee</div>
               <input type="text" id="acct-add-payee" placeholder="Payee / description" style="width:100%;padding:6px 8px;border:.5px solid #f0e0a0;border-radius:6px;font-size:12px;background:#fff;outline:none;">
             </div>
-            <div>
+            <!-- Category (shown for expense) / To Account (shown for transfer) -->
+            <div id="acct-add-cat-wrap">
               <div style="font-size:10px;font-weight:600;color:var(--text-secondary);margin-bottom:3px;">Category</div>
               <select id="acct-add-cat" style="width:100%;padding:6px 8px;border:.5px solid #f0e0a0;border-radius:6px;font-size:12px;background:#fff;outline:none;appearance:none;"></select>
+            </div>
+            <div id="acct-add-toacct-wrap" style="display:none;">
+              <div style="font-size:10px;font-weight:600;color:#2a4fd4;margin-bottom:3px;">To Account</div>
+              <select id="acct-add-toacct" style="width:100%;padding:6px 8px;border:.5px solid #b0c4f0;border-radius:6px;font-size:12px;background:#f0f4ff;outline:none;appearance:none;font-weight:500;"></select>
             </div>
             <div>
               <div style="font-size:10px;font-weight:600;color:var(--text-secondary);margin-bottom:3px;">Memo</div>
               <input type="text" id="acct-add-memo" placeholder="Optional note" style="width:100%;padding:6px 8px;border:.5px solid #f0e0a0;border-radius:6px;font-size:12px;background:#fff;outline:none;">
             </div>
             <div>
-              <div style="font-size:10px;font-weight:600;color:var(--coral);margin-bottom:3px;">Outflow</div>
-              <input type="number" id="acct-add-outflow" placeholder="0.00" min="0" step="0.01" style="width:100%;padding:6px 8px;border:.5px solid #f0e0a0;border-radius:6px;font-size:12px;font-family:var(--mono);background:#fff;outline:none;text-align:right;">
+              <div style="font-size:10px;font-weight:600;margin-bottom:3px;" id="acct-add-amount-label" style="color:var(--coral);">Amount</div>
+              <input type="number" id="acct-add-amount" placeholder="0.00" min="0" step="0.01" style="width:100%;padding:6px 8px;border:.5px solid #f0e0a0;border-radius:6px;font-size:12px;font-family:var(--mono);background:#fff;outline:none;text-align:right;">
             </div>
-            <div>
-              <div style="font-size:10px;font-weight:600;color:var(--mint);margin-bottom:3px;">Inflow</div>
-              <input type="number" id="acct-add-inflow" placeholder="0.00" min="0" step="0.01" style="width:100%;padding:6px 8px;border:.5px solid #f0e0a0;border-radius:6px;font-size:12px;font-family:var(--mono);background:#fff;outline:none;text-align:right;">
-            </div>
-            <div style="display:flex;gap:6px;align-items:flex-end;padding-bottom:1px;">
+            <div style="display:flex;gap:6px;align-items:center;padding-bottom:1px;">
               <button onclick="saveAcctAddRow()" style="background:var(--mint);color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">Save</button>
-              <button onclick="toggleAcctAddRow()" style="background:none;border:.5px solid var(--border);border-radius:6px;padding:7px 10px;font-size:12px;cursor:pointer;color:var(--text-muted);">Cancel</button>
+              <button onclick="toggleAcctAddRow()" style="background:none;border:.5px solid var(--border);border-radius:6px;padding:7px 10px;font-size:12px;cursor:pointer;color:var(--text-muted);">✕</button>
             </div>
           </div>
         </div>
@@ -2572,6 +2589,37 @@ function catDrop(e){
   scheduleSave();
 }
 // ── ACCOUNT INLINE ADD TRANSACTION ───────────────────────────────
+let acctAddType='income';
+
+function setAcctAddType(type){
+  acctAddType=type;
+  const types=['income','expense','transfer'];
+  const colors={income:'var(--mint)',expense:'var(--coral)',transfer:'#2a4fd4'};
+  const bgs={income:'#e4f5ee',expense:'#fdf0ee',transfer:'#f0f4ff'};
+
+  types.forEach(t=>{
+    const btn=document.getElementById('acct-add-type-'+t);
+    btn.style.background=t===type?bgs[t]:'none';
+    btn.style.color=t===type?colors[t]:'var(--text-muted)';
+  });
+
+  // Show/hide category vs to-account
+  document.getElementById('acct-add-cat-wrap').style.display=type==='transfer'?'none':'';
+  document.getElementById('acct-add-toacct-wrap').style.display=type==='transfer'?'':'none';
+
+  // Update amount label colour
+  const lbl=document.getElementById('acct-add-amount-label');
+  lbl.style.color=type==='income'?'var(--mint)':type==='transfer'?'#2a4fd4':'var(--coral)';
+  lbl.textContent=type==='income'?'Inflow':type==='transfer'?'Amount':'Outflow';
+
+  // Update payee label
+  document.getElementById('acct-add-payee-label').textContent=type==='transfer'?'Description (optional)':'Payee';
+
+  // Hint
+  document.getElementById('acct-add-type-hint').textContent=
+    type==='transfer'?'One entry — both accounts update automatically':'';
+}
+
 function toggleAcctAddRow(){
   const row=document.getElementById('acct-add-row');
   const isOpen=row.style.display!=='none';
@@ -2579,27 +2627,36 @@ function toggleAcctAddRow(){
 
   // Populate category select
   const sel=document.getElementById('acct-add-cat');
-  sel.innerHTML='<option value="">— Expense category —</option>';
+  sel.innerHTML='<option value="">— Select category —</option>';
   const groups=groupCategories();
   Object.entries(groups).forEach(([group,cats])=>{
     const og=document.createElement('optgroup');og.label=group;
     cats.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.name;og.appendChild(o);});
     sel.appendChild(og);
   });
-  // Also add income and transfer options
-  sel.innerHTML+='<option value="__income__">— Income (inflow) —</option>';
+  sel.innerHTML+='<option value="__income__">Ready to Assign (income)</option>';
 
-  // Set today's date
+  // Populate to-account select (all accounts except current)
+  const toSel=document.getElementById('acct-add-toacct');
+  toSel.innerHTML='<option value="">— Select destination account —</option>';
+  accounts.filter(a=>a.id!==currentAcctId).forEach(a=>{
+    const o=document.createElement('option');o.value=a.id;o.textContent=a.name;toSel.appendChild(o);
+  });
+
+  // Reset fields
   document.getElementById('acct-add-date').value=new Date().toISOString().slice(0,10);
   document.getElementById('acct-add-payee').value='';
   document.getElementById('acct-add-memo').value='';
-  document.getElementById('acct-add-outflow').value='';
-  document.getElementById('acct-add-inflow').value='';
+  document.getElementById('acct-add-amount').value='';
+
+  // Default to income
+  acctAddType='income';
+  setAcctAddType('income');
 
   row.style.display='block';
-  setTimeout(()=>document.getElementById('acct-add-payee').focus(),40);
+  setTimeout(()=>document.getElementById('acct-add-amount').focus(),40);
 
-  // Save on Enter key in any field
+  // Keyboard shortcuts
   row.querySelectorAll('input,select').forEach(el=>{
     el.onkeydown=e=>{
       if(e.key==='Enter')saveAcctAddRow();
@@ -2611,27 +2668,53 @@ function toggleAcctAddRow(){
 function saveAcctAddRow(){
   const date=document.getElementById('acct-add-date').value;
   const payee=document.getElementById('acct-add-payee').value.trim();
-  const catId=document.getElementById('acct-add-cat').value;
   const memo=document.getElementById('acct-add-memo').value.trim();
-  const outflow=parseFloat(document.getElementById('acct-add-outflow').value)||0;
-  const inflow=parseFloat(document.getElementById('acct-add-inflow').value)||0;
+  const amount=parseFloat(document.getElementById('acct-add-amount').value)||0;
+  const catId=document.getElementById('acct-add-cat').value;
+  const toAcctId=document.getElementById('acct-add-toacct').value;
 
-  if(!payee){toast('Enter a payee','error');document.getElementById('acct-add-payee').focus();return;}
   if(!date){toast('Select a date','error');return;}
-  if(outflow===0&&inflow===0){toast('Enter an outflow or inflow amount','error');return;}
+  if(amount<=0){toast('Enter an amount greater than 0','error');document.getElementById('acct-add-amount').focus();return;}
 
-  const isIncome=inflow>0&&catId==='__income__'||inflow>0&&!catId;
-  const amount=outflow>0?outflow:inflow;
-  const type=outflow>0?'expense':'income';
+  if(acctAddType==='transfer'){
+    if(!toAcctId){toast('Select a destination account','error');document.getElementById('acct-add-toacct').focus();return;}
+    const today=date;
+    const month=today.slice(0,7);
+    const transferId=uid();
+    // Single transfer transaction (links from → to)
+    transactions.push({
+      id:transferId,
+      type:'transfer',
+      amount,
+      payee:payee||`Transfer to ${getAcctName(toAcctId)}`,
+      memo,date,month,
+      accountId:currentAcctId,
+      toAccountId:toAcctId,
+      categoryId:null,
+      cleared:true,
+      _ts:Date.now()
+    });
+    toggleAcctAddRow();
+    renderAccountView(currentAcctId);
+    renderSidebar();
+    renderRecentTxns();
+    renderATB();
+    scheduleSave();
+    toast(`Transfer of ${fmt(amount)} to ${getAcctName(toAcctId)} saved`);
+    return;
+  }
+
+  // Income or expense
+  if(acctAddType==='expense'&&!catId){toast('Select a category','error');document.getElementById('acct-add-cat').focus();return;}
+  const type=acctAddType;
   const month=date.slice(0,7);
-
   transactions.push({
-    id:uid(),type,amount,payee,memo,date,month,
+    id:uid(),type,amount,
+    payee:payee||'—',memo,date,month,
     accountId:currentAcctId,
     categoryId:type==='expense'?(catId&&catId!=='__income__'?catId:null):null,
     cleared:true,_ts:Date.now()
   });
-
   toggleAcctAddRow();
   renderAccountView(currentAcctId);
   renderSidebar();
