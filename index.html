@@ -459,7 +459,10 @@
                 <div class="field"><label>Date</label><input type="date" id="txn-date"></div>
                 <div class="field"><label>Amount</label><input type="number" id="txn-amount" placeholder="0.00" min="0" step="0.01"></div>
               </div>
-              <div class="field"><label>Payee / Description</label><input type="text" id="txn-payee" placeholder="e.g. No Frills"></div>
+              <div class="field"><label>Payee / Description</label>
+                <input type="text" id="txn-payee" placeholder="e.g. No Frills" list="payee-suggestions" autocomplete="off" oninput="onPayeeInput('txn-payee','txn-cat')">
+                <datalist id="payee-suggestions"></datalist>
+              </div>
               <div class="field" id="acct-field"><label>Account</label><select id="txn-acct"><option value="">— Select account —</option></select></div>
               <div class="field" id="to-acct-field" style="display:none;"><label>To Account</label><select id="txn-to-acct"><option value="">— Select account —</option></select></div>
               <div class="field" id="cat-field"><label>Category</label><select id="txn-cat"><option value="">— Select category —</option></select></div>
@@ -540,7 +543,8 @@
             </div>
             <div>
               <div style="font-size:10px;font-weight:600;color:var(--text-secondary);margin-bottom:3px;" id="acct-add-payee-label">Payee</div>
-              <input type="text" id="acct-add-payee" placeholder="Payee / description" style="width:100%;padding:6px 8px;border:.5px solid #f0e0a0;border-radius:6px;font-size:12px;background:#fff;outline:none;">
+              <input type="text" id="acct-add-payee" placeholder="Payee / description" list="payee-suggestions-acct" autocomplete="off" oninput="onPayeeInput('acct-add-payee','acct-add-cat')" style="width:100%;padding:6px 8px;border:.5px solid #f0e0a0;border-radius:6px;font-size:12px;background:#fff;outline:none;">
+              <datalist id="payee-suggestions-acct"></datalist>
             </div>
             <!-- Category (shown for expense) / To Account (shown for transfer) -->
             <div id="acct-add-cat-wrap">
@@ -1179,7 +1183,7 @@ async function loadFromDrive(){
     driveFileId=await findOrCreateFile();
     const r=await fetch(`https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`,{headers:{Authorization:'Bearer '+accessToken}});
     if(r.status===200){const t=await r.text();if(t&&t.trim().startsWith('{')){const d=JSON.parse(t);categories=d.categories||[];transactions=d.transactions||[];accounts=d.accounts||[];budgetName=d.budgetName||'Budget';updateLogoName();}}
-    setSyncStatus('synced','Up to date');lastSyncTime=new Date();renderAll();
+    setSyncStatus('synced','Up to date');lastSyncTime=new Date();renderAll();refreshPayeeSuggestions();
   }catch(e){setSyncStatus('error','Could not load');toast('Could not load from Drive','error');renderAll();}
 }
 async function saveToDrive(){
@@ -1709,7 +1713,7 @@ async function addTransaction(){
   transactions.push({id:uid(),type:txnType,amount,payee,date,month,accountId:acctId,categoryId:catId,toAccountId:toAcctId,cleared:true,_ts:Date.now()});
   document.getElementById('txn-amount').value='';
   document.getElementById('txn-payee').value='';
-  renderAll();scheduleSave();toast('Transaction saved');
+  renderAll();scheduleSave();refreshPayeeSuggestions();toast('Transaction saved');
 }
 
 function updateAssigned(catId,val){
@@ -2000,7 +2004,7 @@ async function runImport(){
       }
     }
 
-    closeImportModal();renderAll();scheduleSave();toast('Import complete!');
+    closeImportModal();renderAll();scheduleSave();refreshPayeeSuggestions();toast('Import complete!');
   }catch(e){
     document.getElementById('import-error').textContent='Import failed: '+e.message;
     document.getElementById('import-error').style.display='block';
@@ -2700,6 +2704,7 @@ function saveAcctAddRow(){
     renderRecentTxns();
     renderATB();
     scheduleSave();
+    refreshPayeeSuggestions();
     toast(`Transfer of ${fmt(amount)} to ${getAcctName(toAcctId)} saved`);
     return;
   }
@@ -3046,6 +3051,46 @@ function styleXLSXSheet(ws){
   // Set column widths
   const range=XLSX.utils.decode_range(ws['!ref']||'A1');
   ws['!cols']=Array(range.e.c+1).fill({wch:18});
+}
+
+// ── PAYEE AUTOCOMPLETE ────────────────────────────────────────────
+// Build a map of payee → {lastCatId, count} from transaction history
+function buildPayeeMap(){
+  const map={};
+  // Sort oldest first so newest overwrites (latest category wins)
+  [...transactions].sort((a,b)=>(a._ts||0)-(b._ts||0)).forEach(t=>{
+    if(!t.payee||t.type==='transfer')return;
+    const key=t.payee.trim().toLowerCase();
+    if(!map[key])map[key]={name:t.payee.trim(),count:0,lastCatId:null};
+    map[key].count++;
+    if(t.categoryId)map[key].lastCatId=t.categoryId;
+  });
+  return map;
+}
+
+function refreshPayeeSuggestions(){
+  const map=buildPayeeMap();
+  // Sort by frequency desc
+  const sorted=Object.values(map).sort((a,b)=>b.count-a.count);
+  ['payee-suggestions','payee-suggestions-acct'].forEach(id=>{
+    const dl=document.getElementById(id);
+    if(!dl)return;
+    dl.innerHTML=sorted.map(p=>`<option value="${p.name}">`).join('');
+  });
+}
+
+function onPayeeInput(payeeInputId, catSelectId){
+  const payee=document.getElementById(payeeInputId)?.value.trim().toLowerCase();
+  if(!payee)return;
+  // Auto-fill category when payee exactly matches a known payee
+  const map=buildPayeeMap();
+  const match=map[payee];
+  if(match?.lastCatId){
+    const catSel=document.getElementById(catSelectId);
+    if(catSel&&catSel.querySelector(`option[value="${match.lastCatId}"]`)){
+      catSel.value=match.lastCatId;
+    }
+  }
 }
 
 // ── WIRE UP ───────────────────────────────────────────────────────
