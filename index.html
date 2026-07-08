@@ -501,25 +501,26 @@
     <button id="nav-budget" class="active"><i class="ti ti-layout-list"></i> Budget</button>
     <button id="nav-all-txns"><i class="ti ti-receipt"></i> Transactions</button>
     <button id="nav-reports"><i class="ti ti-chart-bar"></i> Reports</button>
-    <button id="nav-import" style="border:.5px solid rgba(255,255,255,.2);"><i class="ti ti-file-import"></i> Import YNAB</button>
-    <button id="nav-smart-import" style="border:.5px solid rgba(125,232,184,.35);color:#7de8b8;"><i class="ti ti-sparkles"></i> Smart Import</button>
-    <button id="nav-export" style="border:.5px solid rgba(255,255,255,.2);"><i class="ti ti-file-export"></i> Export</button>
-    <button id="nav-new-year" style="border:.5px solid rgba(125,232,184,.35);color:#7de8b8;"><i class="ti ti-calendar-plus"></i> New Budget</button>
-    <button id="nav-fresh-start" style="border:.5px solid rgba(224,83,64,.4);color:var(--coral);"><i class="ti ti-plant"></i> Fresh Start</button>
   </nav>
 </header>
 
 <div id="sync-bar" class="hidden">
   <div class="sync-status"><div class="sync-dot" id="sync-dot"></div><span id="sync-label">Loading…</span></div>
-  <div style="display:flex;align-items:center;gap:10px;">
-    <div class="user-pill" id="user-pill" style="display:none;">
-      <div id="user-avatar-wrap" style="width:22px;height:22px;border-radius:50%;overflow:hidden;flex-shrink:0;background:#1aaa7c;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;" id="user-avatar-fallback">
+  <div style="display:flex;align-items:center;gap:6px;flex-wrap:nowrap;overflow-x:auto;">
+    <button id="nav-import" style="background:none;border:.5px solid rgba(255,255,255,.2);color:rgba(255,255,255,.65);padding:4px 9px;border-radius:5px;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:4px;white-space:nowrap;"><i class="ti ti-file-spreadsheet"></i> Import CSV</button>
+    <button id="nav-smart-import" style="background:none;border:.5px solid rgba(125,232,184,.35);color:#7de8b8;padding:4px 9px;border-radius:5px;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:4px;white-space:nowrap;"><i class="ti ti-sparkles"></i> Smart Import</button>
+    <button id="nav-export" style="background:none;border:.5px solid rgba(255,255,255,.2);color:rgba(255,255,255,.65);padding:4px 9px;border-radius:5px;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:4px;white-space:nowrap;"><i class="ti ti-file-export"></i> Export</button>
+    <button id="nav-new-year" style="background:none;border:.5px solid rgba(125,232,184,.35);color:#7de8b8;padding:4px 9px;border-radius:5px;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:4px;white-space:nowrap;"><i class="ti ti-calendar-plus"></i> New Budget</button>
+    <button id="nav-fresh-start" style="background:none;border:.5px solid rgba(224,83,64,.4);color:#e05340;padding:4px 9px;border-radius:5px;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:4px;white-space:nowrap;"><i class="ti ti-plant"></i> Fresh Start</button>
+    <div style="width:.5px;height:18px;background:rgba(255,255,255,.15);margin:0 2px;flex-shrink:0;"></div>
+    <div class="user-pill" id="user-pill" style="display:none;flex-shrink:0;">
+      <div id="user-avatar-wrap" style="width:22px;height:22px;border-radius:50%;overflow:hidden;flex-shrink:0;background:#1aaa7c;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;">
         <img id="user-avatar" src="" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';document.getElementById('user-avatar-initials').style.display='flex';">
         <span id="user-avatar-initials" style="display:none;width:100%;height:100%;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;"></span>
       </div>
       <span class="user-name" id="user-name"></span>
     </div>
-    <button class="btn-signout" id="btn-signout">Sign out</button>
+    <button class="btn-signout" id="btn-signout" style="flex-shrink:0;white-space:nowrap;">Sign out</button>
   </div>
 </div>
 
@@ -580,7 +581,7 @@
       <div style="width:36px;height:4px;background:var(--border);border-radius:2px;margin:10px auto 14px;"></div>
       <div style="padding:0 6px 12px;">
         <button onclick="openImportModal();closeMobMore();" style="width:100%;padding:14px 16px;background:none;border:none;border-radius:10px;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:12px;color:var(--text-primary);text-align:left;" onmouseenter="this.style.background='var(--surface)'" onmouseleave="this.style.background='none'">
-          <i class="ti ti-file-import" aria-hidden="true" style="font-size:20px;color:var(--mint);width:24px;"></i> Import YNAB
+          <i class="ti ti-file-spreadsheet" aria-hidden="true" style="font-size:20px;color:var(--mint);width:24px;"></i> Import CSV
         </button>
         <button onclick="openSmartImport();closeMobMore();" style="width:100%;padding:14px 16px;background:none;border:none;border-radius:10px;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:12px;color:var(--text-primary);text-align:left;" onmouseenter="this.style.background='var(--surface)'" onmouseleave="this.style.background='none'">
           <i class="ti ti-sparkles" aria-hidden="true" style="font-size:20px;color:#7de8b8;width:24px;"></i> Smart Import
@@ -1182,8 +1183,8 @@
 </div>
 <div class="modal-overlay" id="import-modal">
   <div class="modal" style="width:520px;max-width:calc(100vw - 2rem);max-height:calc(100vh - 2rem);overflow-y:auto;">
-    <h3 style="display:flex;align-items:center;gap:8px;"><i class="ti ti-file-import" style="color:var(--mint)"></i> Import from YNAB</h3>
-    <p style="font-size:13px;color:var(--text-secondary);margin:6px 0 16px;line-height:1.6;">In YNAB → click your plan name → <strong>Export Plan</strong>. Upload both CSVs below.</p>
+    <h3 style="display:flex;align-items:center;gap:8px;"><i class="ti ti-file-spreadsheet" style="color:var(--mint)"></i> Import CSV</h3>
+    <p style="font-size:13px;color:var(--text-secondary);margin:6px 0 16px;line-height:1.6;">Import from a YNAB export — upload your Plan.csv (budget categories) and Register.csv (transactions). Both files are required.</p>
     <div class="field">
       <label>Budget CSV <span style="font-weight:400;color:var(--text-muted)">(… - Plan.csv or Budget.csv)</span></label>
       <div id="budget-drop" class="drop-zone" onclick="document.getElementById('budget-file').click()">
