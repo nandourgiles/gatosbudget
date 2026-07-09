@@ -1543,7 +1543,14 @@ function renderCategories(){
   if(!categories.length){tbody.innerHTML='<tr><td colspan="7"><div class="no-data"><i class="ti ti-layout-list"></i>No categories yet.</div></td></tr>';return;}
   const groups=groupCategories();let html='';
   Object.entries(groups).forEach(([group,cats])=>{
-    html+=`<tr class="cat-group-row"><td colspan="7">${group}</td></tr>`;
+    html+=`<tr class="cat-group-row"><td colspan="7" style="padding:4px 8px 4px 10px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <span>${group}</span>
+        <button onclick="quickAddCategory('${group.replace(/'/g,"\\'")}');event.stopPropagation();" style="background:#e4f5ee;border:.5px solid rgba(26,170,124,.3);color:#0a6b4e;font-size:10px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:3px;padding:2px 7px;border-radius:4px;transition:opacity .15s;" onmouseenter="this.style.background='#d0eed8'" onmouseleave="this.style.background='#e4f5ee'">
+          <i class="ti ti-plus" style="font-size:11px;"></i> Add
+        </button>
+      </div>
+    </td></tr>`;
     cats.forEach(cat=>{
       const assigned=(cat.assigned||{})[currentMonth]||0;
       const activity=calcCatActivity(cat.id);const available=assigned-activity;
@@ -2083,6 +2090,20 @@ function toggleGoalAmount(){
     const labels={monthly:'Monthly spending limit ($)',savings:'Total savings target ($)',bill:'Fixed bill amount ($)'};
     document.getElementById('goal-amount-label').textContent=labels[type]||'Goal amount';
   }
+}
+
+function quickAddCategory(group){
+  // Open the add category modal with the group pre-selected
+  openAddCatModal();
+  // Pre-fill the group field after modal opens
+  setTimeout(()=>{
+    const grpInput=document.getElementById('new-cat-group');
+    if(grpInput){
+      grpInput.value=group;
+      // Focus the name field instead
+      document.getElementById('new-cat-name')?.focus();
+    }
+  },50);
 }
 
 function openAddCatModal(){
