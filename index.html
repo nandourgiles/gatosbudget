@@ -277,7 +277,7 @@
   .cat-table thead th:first-child{text-align:left;width:20px;padding-right:0;}
   .cat-table thead th:nth-child(2){text-align:left;width:auto;}
   .cat-table thead th:nth-child(3){width:95px;}  /* Assigned */
-  .cat-table thead th:nth-child(4){width:90px;}  /* Activity */
+  .cat-table thead th:nth-child(4){width:90px;}  /* Used */
   .cat-table thead th:nth-child(5){width:95px;}  /* Available */
   .cat-table thead th:nth-child(6){width:130px;} /* Goal */
   .cat-table thead th:last-child{width:28px;}
@@ -621,8 +621,8 @@
       <div class="atb-hero">
         <div class="atb-left">
           <div class="atb-label">Available to Budget</div>
-          <div class="atb-amount zero" id="atb-amount">$0.00</div>
-          <div class="atb-sub" id="atb-sub">Add income to get started</div>
+          <div class="atb-amount zero" id="atb-amount" onclick="openAssignPanel()" title="Click to assign money to categories" style="cursor:pointer;text-decoration:underline dotted;text-underline-offset:4px;transition:opacity .15s;" onmouseenter="this.style.opacity='.8'" onmouseleave="this.style.opacity='1'">$0.00</div>
+          <div class="atb-sub" id="atb-sub" style="cursor:pointer;" onclick="openAssignPanel()">Add income to get started</div>
         </div>
         <div style="flex:1">
           <div class="atb-meter-labels"><span>Unassigned</span><span id="atb-pct-label">0% assigned</span></div>
@@ -630,7 +630,7 @@
           <div class="atb-stats">
             <div class="atb-stat"><div class="atb-stat-label">Income</div><div class="atb-stat-val positive-val" id="stat-income">$0.00</div></div>
             <div class="atb-stat"><div class="atb-stat-label">Assigned</div><div class="atb-stat-val" id="stat-assigned">$0.00</div></div>
-            <div class="atb-stat"><div class="atb-stat-label">Activity</div><div class="atb-stat-val" id="stat-activity">$0.00</div></div>
+            <div class="atb-stat"><div class="atb-stat-label">Used</div><div class="atb-stat-val" id="stat-activity">$0.00</div></div>
           </div>
         </div>
       </div>
@@ -649,7 +649,7 @@
               </div>
             </div>
             <table class="cat-table">
-              <thead><tr><th style="width:24px;"></th><th>Category</th><th>Assigned</th><th>Activity</th><th>Available</th><th>Goal</th><th></th></tr></thead>
+              <thead><tr><th style="width:24px;"></th><th>Category</th><th>Assigned</th><th>Used</th><th>Available</th><th>Goal</th><th></th></tr></thead>
               <tbody id="cat-tbody"></tbody>
             </table>
           </div>
@@ -840,7 +840,7 @@
         </div>
         <div class="acct-stats" style="margin-top:1rem;">
           <div class="acct-stat"><div class="acct-stat-label">Assigned</div><div class="acct-stat-val" id="cat-view-assigned">$0.00</div></div>
-          <div class="acct-stat"><div class="acct-stat-label">Activity</div><div class="acct-stat-val negative-val" id="cat-view-activity">$0.00</div></div>
+          <div class="acct-stat"><div class="acct-stat-label">Used</div><div class="acct-stat-val negative-val" id="cat-view-activity">$0.00</div></div>
           <div class="acct-stat"><div class="acct-stat-label">Transactions</div><div class="acct-stat-val" id="cat-view-count">0</div></div>
           <div class="acct-stat" id="cat-view-goal" style="flex:2;"></div>
           <div class="acct-stat"><div class="acct-stat-label">Month</div>
@@ -1365,6 +1365,48 @@
   </div>
 </div>
 
+<!-- ASSIGN MONEY PANEL -->
+<div id="assign-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:300;" onclick="closeAssignPanel()"></div>
+<div id="assign-panel" style="position:fixed;top:0;left:0;width:420px;max-width:96vw;height:100%;background:var(--surface-card);box-shadow:4px 0 32px rgba(0,0,0,.15);z-index:301;display:flex;flex-direction:column;transform:translateX(-100%);transition:transform .28s cubic-bezier(.4,0,.2,1);">
+
+  <!-- Header -->
+  <div style="background:linear-gradient(135deg,#1e3a2f,#25594a);padding:18px 20px 14px;flex-shrink:0;">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;">
+      <div>
+        <div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:4px;">Available to Budget</div>
+        <div style="font-family:var(--mono);font-size:36px;font-weight:700;line-height:1;" id="assign-atb-display">$0.00</div>
+        <div style="font-size:12px;margin-top:4px;" id="assign-atb-sub"></div>
+      </div>
+      <button onclick="closeAssignPanel()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="ti ti-x"></i></button>
+    </div>
+    <!-- Progress bar -->
+    <div style="display:flex;justify-content:space-between;font-size:11px;color:rgba(255,255,255,.45);margin-bottom:5px;">
+      <span id="assign-progress-label">$0 assigned</span>
+      <span id="assign-pct-label">0%</span>
+    </div>
+    <div style="background:rgba(255,255,255,.15);border-radius:4px;height:6px;overflow:hidden;">
+      <div id="assign-progress-bar" style="height:100%;border-radius:4px;background:#7de8b8;transition:width .3s;width:0%;"></div>
+    </div>
+  </div>
+
+  <!-- Month selector -->
+  <div style="padding:10px 16px;border-bottom:.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:var(--surface);">
+    <button onclick="assignPrevMonth()" style="background:none;border:.5px solid var(--border);border-radius:5px;width:26px;height:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--text-secondary);"><i class="ti ti-chevron-left"></i></button>
+    <div style="font-size:13px;font-weight:600;color:var(--text-primary);" id="assign-month-label">July 2026</div>
+    <button onclick="assignNextMonth()" style="background:none;border:.5px solid var(--border);border-radius:5px;width:26px;height:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--text-secondary);"><i class="ti ti-chevron-right"></i></button>
+  </div>
+
+  <!-- Category list -->
+  <div id="assign-cat-list" style="flex:1;overflow-y:auto;"></div>
+
+  <!-- Footer -->
+  <div style="padding:12px 16px;border-top:.5px solid var(--border);background:var(--surface);flex-shrink:0;">
+    <button onclick="closeAssignPanel()" style="width:100%;padding:11px;background:linear-gradient(135deg,var(--navy),#25594a);color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;">
+      <i class="ti ti-circle-check"></i> Done — Save Assignments
+    </button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="https://accounts.google.com/gsi/client" async></script>
@@ -1492,7 +1534,7 @@ function calcStats(){
   const totalActivity=mt.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
   return{totalIncome,totalAssigned,totalActivity,atb:totalIncome-totalAssigned};
 }
-function calcCatActivity(catId){return transactions.filter(t=>t.type==='expense'&&t.categoryId===catId&&t.month===currentMonth).reduce((s,t)=>s+t.amount,0);}
+function calcCatActivity(catId,month){const mo=month||currentMonth;return transactions.filter(t=>t.type==='expense'&&t.categoryId===catId&&t.month===mo).reduce((s,t)=>s+t.amount,0);}
 function acctBalance(acctId){
   const acct=accounts.find(a=>a.id===acctId);
   const start=acct?acct.startingBalance||0:0;
@@ -1591,8 +1633,7 @@ function renderCategories(){
         <td><i class="ti ti-grip-vertical cat-drag-handle" title="Drag to reorder"></i></td>
         <td><span class="cat-dot" style="background:${cat.color||'#888'}"></span><span class="cat-name">${cat.name}</span></td>
         <td><input class="assigned-edit mono" type="number" step="0.01" value="${assigned.toFixed(2)}" onchange="updateAssigned('${cat.id}',this.value)" onblur="updateAssigned('${cat.id}',this.value)"></td>
-        <td class="mono ${activity>0?'negative-val':''}" style="${activity>0?'cursor:pointer;text-decoration:underline dotted;':''}" onclick="${activity>0?`showCategoryView('${cat.id}')`:''}" title="${activity>0?'Click to see transactions':''}">${activity>0?'-':''}${fmt(activity)}</td>
-        <td><span class="avail-pill ${ac}">${fmt(available)}</span></td>
+        <td class="mono ${activity>0?'negative-val':''}" style="${activity>0?'cursor:pointer;text-decoration:underline dotted;':''}" onclick="${activity>0?`showCategoryView('${cat.id}')`:''}" title="${activity>0?'Click to see transactions':''}">${activity>0?'-':''}${fmt(activity)}</td>        <td><span class="avail-pill ${ac}">${fmt(available)}</span></td>
         <td>${goalCell}</td>
         <td><div class="cat-actions"><button class="icon-btn delete" onclick="deleteCategory('${cat.id}')"><i class="ti ti-trash"></i></button></div></td>
       </tr>`;
@@ -2325,7 +2366,148 @@ function hashStr(s){let h=0;for(let i=0;i<s.length;i++)h=(Math.imul(31,h)+s.char
   el.addEventListener('drop',e=>{e.preventDefault();const file=e.dataTransfer.files[0];if(!file)return;const inp=el.querySelector('input[type=file]');const dt=new DataTransfer();dt.items.add(file);inp.files=dt.files;id==='budget-drop'?handleBudgetFile(inp):handleRegisterFile(inp);});
 });
 
-// ── REPORT CATEGORY DRAWER ────────────────────────────────────────
+// ── ASSIGN MONEY PANEL ────────────────────────────────────────────
+let assignMonth=currentMonth;
+
+function openAssignPanel(){
+  assignMonth=currentMonth;
+  renderAssignPanel();
+  document.getElementById('assign-overlay').style.display='block';
+  const panel=document.getElementById('assign-panel');
+  panel.style.display='flex';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{panel.style.transform='translateX(0)';}));
+}
+
+function closeAssignPanel(){
+  const panel=document.getElementById('assign-panel');
+  panel.style.transform='translateX(-100%)';
+  setTimeout(()=>{
+    panel.style.display='none';
+    document.getElementById('assign-overlay').style.display='none';
+  },280);
+  // Save and re-render
+  renderAll();
+  scheduleSave();
+}
+
+function assignPrevMonth(){
+  const [y,m]=assignMonth.split('-').map(Number);
+  const d=new Date(y,m-2,1);
+  assignMonth=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+  renderAssignPanel();
+}
+function assignNextMonth(){
+  const [y,m]=assignMonth.split('-').map(Number);
+  const d=new Date(y,m,1);
+  assignMonth=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+  renderAssignPanel();
+}
+
+function renderAssignPanel(){
+  const [y,m]=assignMonth.split('-');
+  const monthName=new Date(+y,+m-1,1).toLocaleDateString('en-US',{month:'long',year:'numeric'});
+  document.getElementById('assign-month-label').textContent=monthName;
+
+  // Calculate ATB
+  const totalIncome=transactions.filter(t=>t.type==='income'&&t.month===assignMonth).reduce((s,t)=>s+t.amount,0);
+  const totalAssigned=categories.reduce((s,c)=>s+((c.assigned||{})[assignMonth]||0),0);
+  const atb=totalIncome-totalAssigned;
+
+  document.getElementById('assign-atb-display').textContent=fmt(atb);
+  document.getElementById('assign-atb-display').style.color=atb<0?'#ffb3aa':atb===0?'rgba(255,255,255,.5)':'#7de8b8';
+  document.getElementById('assign-atb-sub').textContent=atb>0?`Ready to assign`:(atb<0?`Over-budgeted by ${fmt(Math.abs(atb))}`:`Fully assigned ✓`);
+  document.getElementById('assign-atb-sub').style.color=atb<0?'#ffb3aa':'rgba(255,255,255,.6)';
+
+  // Progress bar
+  const pct=totalIncome>0?Math.min(100,(totalAssigned/totalIncome)*100):0;
+  document.getElementById('assign-progress-bar').style.width=pct+'%';
+  document.getElementById('assign-progress-bar').style.background=atb<0?'#ffb3aa':'#7de8b8';
+  document.getElementById('assign-progress-label').textContent=fmt(totalAssigned)+' assigned';
+  document.getElementById('assign-pct-label').textContent=pct.toFixed(0)+'%';
+
+  // Build category list
+  const groups=groupCategories();
+  let html='';
+  Object.entries(groups).forEach(([group,cats])=>{
+    const groupTotal=cats.reduce((s,c)=>s+((c.assigned||{})[assignMonth]||0),0);
+    html+=`<div style="padding:6px 16px 2px;background:var(--surface);border-bottom:.5px solid var(--border);position:sticky;top:0;z-index:1;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted);">${group}</span>
+        <span style="font-size:11px;font-family:var(--mono);color:var(--text-muted);">${fmt(groupTotal)}</span>
+      </div>
+    </div>`;
+
+    cats.forEach(cat=>{
+      const assigned=(cat.assigned||{})[assignMonth]||0;
+      const activity=calcCatActivity(cat.id,assignMonth);
+      const available=assigned-activity;
+      const availCls=available>0?'color:#0a6b4e':available<0?'color:var(--coral)':'color:var(--text-muted)';
+
+      html+=`<div style="padding:10px 16px;border-bottom:.5px solid var(--border);display:flex;align-items:center;gap:12px;" id="assign-row-${cat.id}">
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+            <span style="width:7px;height:7px;border-radius:50%;background:${cat.color||'#888'};flex-shrink:0;display:inline-block;"></span>
+            <span style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${cat.name}</span>
+          </div>
+          <div style="display:flex;gap:12px;font-size:11px;">
+            <span style="color:var(--text-muted);">Used: <span style="font-family:var(--mono);">${activity>0?'-':''}${fmt(activity)}</span></span>
+            <span style="${availCls};">Available: <span style="font-family:var(--mono);font-weight:600;">${fmt(available)}</span></span>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">
+          <div style="font-size:10px;color:var(--text-muted);text-align:right;">Assigned</div>
+          <input type="number" step="0.01" min="0"
+            value="${assigned>0?assigned.toFixed(2):''}"
+            placeholder="0.00"
+            data-cat-id="${cat.id}"
+            oninput="assignUpdateCat('${cat.id}',this.value)"
+            onkeydown="if(event.key==='Enter'){this.blur();assignFocusNext('${cat.id}')}"
+            style="width:90px;padding:6px 9px;border:1.5px solid var(--border);border-radius:7px;font-size:14px;font-family:var(--mono);text-align:right;background:var(--surface-card);color:var(--text-primary);outline:none;transition:border-color .15s,box-shadow .15s;"
+            onfocus="this.style.borderColor='var(--mint)';this.style.boxShadow='0 0 0 3px rgba(26,170,124,.15)';this.select()"
+            onblur="this.style.borderColor='var(--border)';this.style.boxShadow='none'">
+        </div>
+      </div>`;
+    });
+  });
+
+  document.getElementById('assign-cat-list').innerHTML=html;
+}
+
+function assignUpdateCat(catId, val){
+  const amount=parseFloat(val)||0;
+  const cat=categories.find(c=>c.id===catId);
+  if(!cat)return;
+  if(!cat.assigned)cat.assigned={};
+  cat.assigned[assignMonth]=amount;
+  // Recalculate ATB display live
+  const totalIncome=transactions.filter(t=>t.type==='income'&&t.month===assignMonth).reduce((s,t)=>s+t.amount,0);
+  const totalAssigned=categories.reduce((s,c)=>s+((c.assigned||{})[assignMonth]||0),0);
+  const atb=totalIncome-totalAssigned;
+  document.getElementById('assign-atb-display').textContent=fmt(atb);
+  document.getElementById('assign-atb-display').style.color=atb<0?'#ffb3aa':atb===0?'rgba(255,255,255,.5)':'#7de8b8';
+  document.getElementById('assign-atb-sub').textContent=atb>0?`Ready to assign`:(atb<0?`Over-budgeted by ${fmt(Math.abs(atb))}`:`Fully assigned ✓`);
+  document.getElementById('assign-atb-sub').style.color=atb<0?'#ffb3aa':'rgba(255,255,255,.6)';
+  const pct=totalIncome>0?Math.min(100,(totalAssigned/totalIncome)*100):0;
+  document.getElementById('assign-progress-bar').style.width=pct+'%';
+  document.getElementById('assign-progress-bar').style.background=atb<0?'#ffb3aa':'#7de8b8';
+  document.getElementById('assign-progress-label').textContent=fmt(totalAssigned)+' assigned';
+  document.getElementById('assign-pct-label').textContent=pct.toFixed(0)+'%';
+  // Update available for this row live
+  const activity=calcCatActivity(catId,assignMonth);
+  const available=amount-activity;
+  const availEl=document.querySelector(`#assign-row-${catId} span[style*="Available"]`);
+  if(availEl){
+    availEl.style.color=available>0?'color:#0a6b4e':available<0?'var(--coral)':'var(--text-muted)';
+    availEl.innerHTML=`Available: <span style="font-family:var(--mono);font-weight:600;">${fmt(available)}</span>`;
+  }
+}
+
+function assignFocusNext(catId){
+  // Move focus to the next category input
+  const inputs=[...document.querySelectorAll('#assign-cat-list input[type="number"]')];
+  const idx=inputs.findIndex(i=>i.dataset.catId===catId);
+  if(idx>=0&&idx<inputs.length-1)inputs[idx+1].focus();
+}
 let drawerCatId=null;
 
 function openReportCatDrawer(catId, month){
