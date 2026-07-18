@@ -512,6 +512,7 @@
     <button id="nav-export" style="background:none;border:.5px solid rgba(255,255,255,.2);color:rgba(255,255,255,.65);padding:4px 9px;border-radius:5px;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:4px;white-space:nowrap;"><i class="ti ti-file-export"></i> Export</button>
     <button id="nav-new-year" style="background:none;border:.5px solid rgba(125,232,184,.35);color:#7de8b8;padding:4px 9px;border-radius:5px;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:4px;white-space:nowrap;"><i class="ti ti-calendar-plus"></i> New Budget</button>
     <button id="nav-fresh-start" style="background:none;border:.5px solid rgba(224,83,64,.4);color:#e05340;padding:4px 9px;border-radius:5px;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:4px;white-space:nowrap;"><i class="ti ti-plant"></i> Fresh Start</button>
+    <button onclick="openApiKeyModal()" style="background:none;border:.5px solid rgba(255,255,255,.15);color:rgba(255,255,255,.45);padding:4px 8px;border-radius:5px;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:4px;white-space:nowrap;" title="API Key Settings"><i class="ti ti-key"></i></button>
     <div style="width:.5px;height:18px;background:rgba(255,255,255,.15);margin:0 2px;flex-shrink:0;"></div>
     <div class="user-pill" id="user-pill" style="display:none;flex-shrink:0;">
       <div id="user-avatar-wrap" style="width:22px;height:22px;border-radius:50%;overflow:hidden;flex-shrink:0;background:#1aaa7c;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;">
@@ -937,6 +938,44 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- API KEY MODAL -->
+<div class="modal-overlay" id="apikey-modal">
+  <div class="modal" style="width:460px;max-width:calc(100vw - 2rem);max-height:calc(100vh - 2rem);overflow-y:auto;">
+    <h3 style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><i class="ti ti-key" style="color:var(--mint);font-size:20px;"></i> Anthropic API Key</h3>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;line-height:1.6;">Smart Import uses Claude's API to read your bank statements. You need a free Anthropic API key to use this feature.</p>
+
+    <div style="background:var(--surface);border-radius:10px;padding:14px;margin-bottom:14px;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px;">How to get your free API key:</div>
+      <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--text-secondary);">
+        <div style="display:flex;align-items:flex-start;gap:8px;"><span style="background:var(--mint);color:#fff;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px;">1</span> Go to <a href="https://console.anthropic.com" target="_blank" style="color:var(--mint);font-weight:500;">console.anthropic.com</a> and create a free account</div>
+        <div style="display:flex;align-items:flex-start;gap:8px;"><span style="background:var(--mint);color:#fff;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px;">2</span> Click <strong>API Keys</strong> in the left menu → <strong>Create Key</strong></div>
+        <div style="display:flex;align-items:flex-start;gap:8px;"><span style="background:var(--mint);color:#fff;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px;">3</span> Copy the key (starts with <code style="background:var(--surface);padding:1px 5px;border-radius:3px;font-size:12px;">sk-ant-</code>) and paste it below</div>
+      </div>
+    </div>
+
+    <div class="field" style="margin-bottom:14px;">
+      <label>Your API Key</label>
+      <input type="password" id="apikey-input" placeholder="sk-ant-api03-..." autocomplete="off"
+        style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--mono);background:var(--surface);outline:none;transition:border-color .15s;"
+        onfocus="this.style.borderColor='var(--mint)'"
+        onblur="this.style.borderColor='var(--border)'"
+        onkeydown="if(event.key==='Enter')saveApiKey()">
+    </div>
+
+    <div style="background:var(--mint-light);border-radius:8px;padding:10px 12px;font-size:12px;color:#0a6b4e;margin-bottom:14px;display:flex;gap:7px;align-items:flex-start;">
+      <i class="ti ti-shield-lock" style="flex-shrink:0;font-size:14px;margin-top:1px;"></i>
+      <span>Your key is stored only in your browser (localStorage) — it never leaves your device and is never sent to our servers. Each Smart Import costs roughly $0.01–$0.03 from your Anthropic account.</span>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeApiKeyModal()">Cancel</button>
+      <button onclick="saveApiKey()" style="flex:1;padding:10px;background:linear-gradient(135deg,var(--navy),#25594a);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;">
+        <i class="ti ti-circle-check"></i> Save & Continue
+      </button>
     </div>
   </div>
 </div>
@@ -1418,7 +1457,8 @@ const FILE_NAME = 'zerobudget-data.json';
 
 // ── STATE ───────────────────────────────────────────────────────
 let categories=[], transactions=[], accounts=[];
-let budgetName='Budget'; // displayed in logo after "Gato's"
+let budgetName='Budget';
+let hasPendingChanges=false;
 let currentMonth=new Date().toISOString().slice(0,7);
 let txnType='income', txnFilter='all', acctTab='all', currentAcctId=null;
 let currentCatId=null, catViewMonth=new Date().toISOString().slice(0,7);
@@ -1496,23 +1536,60 @@ async function loadFromDrive(){
   try{
     driveFileId=await findOrCreateFile();
     const r=await fetch(`https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`,{headers:{Authorization:'Bearer '+accessToken}});
-    if(r.status===200){const t=await r.text();if(t&&t.trim().startsWith('{')){const d=JSON.parse(t);categories=d.categories||[];transactions=d.transactions||[];accounts=d.accounts||[];budgetName=d.budgetName||'Budget';updateLogoName();}}
+    if(r.status===200){
+      const t=await r.text();
+      if(t&&t.trim().startsWith('{')){
+        const d=JSON.parse(t);
+        categories=d.categories||[];transactions=d.transactions||[];accounts=d.accounts||[];budgetName=d.budgetName||'Budget';
+        updateLogoName();
+        // Mirror to localStorage as backup
+        localStorage.setItem('gatos_local_backup',t);
+        localStorage.setItem('gatos_backup_time',new Date().toISOString());
+      }
+    }
     setSyncStatus('synced','Up to date');lastSyncTime=new Date();renderAll();refreshPayeeSuggestions();
-  }catch(e){setSyncStatus('error','Could not load');toast('Could not load from Drive','error');renderAll();}
+  }catch(e){
+    setSyncStatus('error','Drive error — loaded local backup');
+    // Try to fall back to localStorage backup
+    const local=localStorage.getItem('gatos_local_backup');
+    if(local){
+      try{
+        const d=JSON.parse(local);
+        categories=d.categories||[];transactions=d.transactions||[];accounts=d.accounts||[];budgetName=d.budgetName||'Budget';
+        updateLogoName();
+        const backupTime=localStorage.getItem('gatos_backup_time');
+        const when=backupTime?new Date(backupTime).toLocaleString():'unknown time';
+        toast(`Drive unavailable — loaded local backup from ${when}`,'error');
+      }catch(e2){toast('Could not load from Drive or local backup','error');}
+    } else {
+      toast('Could not load from Drive','error');
+    }
+    renderAll();
+  }
 }
+
 async function saveToDrive(){
   if(!accessToken||!driveFileId)return;
   setSyncStatus('syncing','Saving…');
   try{
     const payload=JSON.stringify({categories,transactions,accounts,budgetName,savedAt:new Date().toISOString()});
+    // Always save to localStorage first as instant backup
+    localStorage.setItem('gatos_local_backup',payload);
+    localStorage.setItem('gatos_backup_time',new Date().toISOString());
     const boundary='zb_boundary';
     const body=`--${boundary}\r\nContent-Type: application/json\r\n\r\n${JSON.stringify({name:FILE_NAME})}\r\n--${boundary}\r\nContent-Type: application/json\r\n\r\n${payload}\r\n--${boundary}--`;
     await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=multipart`,{method:'PATCH',headers:{'Authorization':'Bearer '+accessToken,'Content-Type':`multipart/related; boundary=${boundary}`},body});
     setSyncStatus('synced','Saved · '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}));
     lastSyncTime=new Date();
+    hasPendingChanges=false;
   }catch(e){setSyncStatus('error','Save failed — retrying');setTimeout(saveToDrive,5000);}
 }
-function scheduleSave(){clearTimeout(syncTimeout);setSyncStatus('syncing','Saving…');syncTimeout=setTimeout(saveToDrive,1500);}
+function scheduleSave(){
+  hasPendingChanges=true;
+  clearTimeout(syncTimeout);
+  setSyncStatus('syncing','Saving…');
+  syncTimeout=setTimeout(saveToDrive,1500);
+}
 function setSyncStatus(s,l){document.getElementById('sync-dot').className='sync-dot '+s;document.getElementById('sync-label').textContent=l;}
 setInterval(async()=>{
   if(!accessToken||!driveFileId||syncTimeout)return;
@@ -2841,6 +2918,27 @@ function renderReports(){
   }).join(''):'<div class="no-data"><i class="ti ti-target"></i>No goals set yet.</div>';
 }
 
+// ── API KEY SETTINGS ──────────────────────────────────────────────
+function openApiKeyModal(){
+  const existing=localStorage.getItem('gatos_anthropic_key')||'';
+  document.getElementById('apikey-input').value=existing;
+  document.getElementById('apikey-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('apikey-input').focus(),80);
+}
+function closeApiKeyModal(){document.getElementById('apikey-modal').classList.remove('open');}
+function saveApiKey(){
+  const key=document.getElementById('apikey-input').value.trim();
+  if(!key){toast('Enter your API key','error');return;}
+  if(!key.startsWith('sk-ant-')){toast('Key should start with sk-ant-','error');return;}
+  localStorage.setItem('gatos_anthropic_key',key);
+  closeApiKeyModal();
+  toast('API key saved — you can now use Smart Import');
+  // If Smart Import modal is open, continue with analysis
+  if(document.getElementById('smart-import-modal').classList.contains('open')){
+    siAnalyse();
+  }
+}
+
 // ── SMART IMPORT ──────────────────────────────────────────────────
 let siFile=null, siExtracted=[];
 
@@ -2894,6 +2992,13 @@ async function siAnalyse(){
   if(!siFile){toast('Please upload a file first','error');return;}
   const acctId=document.getElementById('si-account-select').value;
   if(!acctId){toast('Select an account','error');return;}
+
+  // Check for API key
+  const apiKey=localStorage.getItem('gatos_anthropic_key');
+  if(!apiKey){
+    openApiKeyModal();
+    return;
+  }
 
   siShowStep(2);
 
@@ -2953,9 +3058,20 @@ If no good match, leave both as empty string.
 
     const resp=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key': localStorage.getItem('gatos_anthropic_key')||'',
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
       body:JSON.stringify(body)
     });
+    if(!resp.ok){
+      const err=await resp.json().catch(()=>({}));
+      if(resp.status===401)throw new Error('Invalid API key — check your key in Settings');
+      if(resp.status===400)throw new Error(err.error?.message||'Bad request — try a clearer image');
+      throw new Error(`API error ${resp.status}: ${err.error?.message||'unknown error'}`);
+    }
     const data=await resp.json();
     const raw=data.content?.find(b=>b.type==='text')?.text||'[]';
     let parsed;
@@ -3847,8 +3963,13 @@ function onPayeeInput(payeeInputId, catSelectId){
   }
 }
 
-// ── WIRE UP ───────────────────────────────────────────────────────
-function setActiveNav(id){
+// Warn if user tries to close tab with unsaved changes
+window.addEventListener('beforeunload',e=>{
+  if(hasPendingChanges){
+    e.preventDefault();
+    e.returnValue='You have unsaved changes. Make sure the sync bar shows "Saved" before closing.';
+  }
+});
   ['nav-budget','nav-all-txns','nav-reports'].forEach(n=>{
     const el=document.getElementById(n);if(el)el.classList.remove('active');
   });
@@ -3873,6 +3994,7 @@ document.getElementById('acct-modal').addEventListener('click',e=>{if(e.target==
 document.getElementById('import-modal').addEventListener('click',e=>{if(e.target===document.getElementById('import-modal'))closeImportModal();});
 document.getElementById('goal-modal').addEventListener('click',e=>{if(e.target===document.getElementById('goal-modal'))closeGoalModal();});
 document.getElementById('edit-acct-modal').addEventListener('click',e=>{if(e.target===document.getElementById('edit-acct-modal'))closeEditAcctModal();});
+document.getElementById('apikey-modal').addEventListener('click',e=>{if(e.target===document.getElementById('apikey-modal'))closeApiKeyModal();});
 document.getElementById('smart-import-modal').addEventListener('click',e=>{if(e.target===document.getElementById('smart-import-modal'))closeSmartImport();});
 document.getElementById('reconcile-modal').addEventListener('click',e=>{if(e.target===document.getElementById('reconcile-modal'))closeReconcileModal();});
 
