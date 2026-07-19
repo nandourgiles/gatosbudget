@@ -3970,6 +3970,9 @@ window.addEventListener('beforeunload',e=>{
     e.returnValue='You have unsaved changes. Make sure the sync bar shows "Saved" before closing.';
   }
 });
+
+// ── WIRE UP ───────────────────────────────────────────────────────
+function setActiveNav(id){
   ['nav-budget','nav-all-txns','nav-reports'].forEach(n=>{
     const el=document.getElementById(n);if(el)el.classList.remove('active');
   });
