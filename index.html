@@ -581,7 +581,7 @@
     <div id="mob-more-panel" style="position:absolute;bottom:0;left:0;right:0;background:var(--surface-card);border-radius:18px 18px 0 0;padding:0 0 env(safe-area-inset-bottom);transform:translateY(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);">
       <div style="width:36px;height:4px;background:var(--border);border-radius:2px;margin:10px auto 14px;"></div>
       <div style="padding:0 6px 12px;">
-        <button onclick="openImportModal();closeMobMore();" style="width:100%;padding:14px 16px;background:none;border:none;border-radius:10px;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:12px;color:var(--text-primary);text-align:left;" onmouseenter="this.style.background='var(--surface)'" onmouseleave="this.style.background='none'">
+        <button onclick="openBankCsv();closeMobMore();" style="width:100%;padding:14px 16px;background:none;border:none;border-radius:10px;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:12px;color:var(--text-primary);text-align:left;" onmouseenter="this.style.background='var(--surface)'" onmouseleave="this.style.background='none'">
           <i class="ti ti-file-spreadsheet" aria-hidden="true" style="font-size:20px;color:var(--mint);width:24px;"></i> Import CSV
         </button>
         <button onclick="openSmartImport();closeMobMore();" style="width:100%;padding:14px 16px;background:none;border:none;border-radius:10px;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:12px;color:var(--text-primary);text-align:left;" onmouseenter="this.style.background='var(--surface)'" onmouseleave="this.style.background='none'">
@@ -1220,6 +1220,91 @@
     </div>
   </div>
 </div>
+<!-- BANK CSV IMPORT MODAL -->
+<div class="modal-overlay" id="bank-csv-modal">
+  <div class="modal" style="width:560px;max-width:calc(100vw - 2rem);max-height:calc(100vh - 2rem);overflow-y:auto;">
+    <h3 style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><i class="ti ti-file-spreadsheet" style="color:var(--mint);font-size:20px;"></i> Bank CSV Import</h3>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;line-height:1.6;">Upload a CSV downloaded from your bank's online portal. Works with CIBC, PC Financial, TD, RBC, Scotiabank, BMO and most Canadian banks.</p>
+
+    <!-- Step 1: Upload & configure -->
+    <div id="bcsv-step-1">
+      <!-- Drop zone -->
+      <div id="bcsv-dropzone" style="border:2px dashed var(--border);border-radius:12px;padding:1.5rem;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;margin-bottom:12px;"
+        onclick="document.getElementById('bcsv-file-input').click()"
+        ondragover="event.preventDefault();this.style.borderColor='var(--mint)';this.style.background='var(--mint-light)'"
+        ondragleave="this.style.borderColor='var(--border)';this.style.background=''"
+        ondrop="bcsvHandleDrop(event)">
+        <i class="ti ti-table-import" style="font-size:32px;color:var(--mint);display:block;margin-bottom:8px;"></i>
+        <div style="font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:3px;">Drop your bank CSV here or click to browse</div>
+        <div style="font-size:12px;color:var(--text-muted);">Download from your bank's website — CSV or OFX format</div>
+        <input type="file" id="bcsv-file-input" accept=".csv,.tsv,.txt,.ofx" style="display:none;" onchange="bcsvHandleFile(this.files[0])">
+      </div>
+
+      <div id="bcsv-file-preview" style="display:none;background:var(--surface);border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:12px;align-items:center;gap:10px;">
+        <i class="ti ti-file-check" style="font-size:18px;color:var(--mint);flex-shrink:0;"></i>
+        <span id="bcsv-file-name" style="font-weight:500;flex:1;"></span>
+        <button onclick="bcsvClearFile()" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:14px;"><i class="ti ti-x"></i></button>
+      </div>
+
+      <!-- Account selector -->
+      <div class="field" style="margin-bottom:12px;">
+        <label>Which account is this statement from?</label>
+        <select id="bcsv-account" style="width:100%;padding:8px 11px;border:.5px solid var(--border);border-radius:7px;font-size:13px;background:var(--surface);outline:none;">
+          <option value="">— Select account —</option>
+        </select>
+      </div>
+
+      <!-- Bank format hint -->
+      <div style="background:var(--surface);border-radius:10px;padding:12px 14px;margin-bottom:14px;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">How to download from your bank:</div>
+        <div style="display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--text-secondary);">
+          <div style="display:flex;gap:8px;"><span style="font-weight:600;color:var(--text-primary);min-width:110px;">PC Financial</span> Sign in → select account → Download → CSV</div>
+          <div style="display:flex;gap:8px;"><span style="font-weight:600;color:var(--text-primary);min-width:110px;">CIBC</span> Sign in → account → Download icon ↓ → CSV</div>
+          <div style="display:flex;gap:8px;"><span style="font-weight:600;color:var(--text-primary);min-width:110px;">TD / RBC / BMO</span> Accounts → Download transactions → CSV</div>
+          <div style="display:flex;gap:8px;"><span style="font-weight:600;color:var(--text-primary);min-width:110px;">Scotiabank</span> Account history → Export → CSV</div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-ghost" onclick="closeBankCsv()">Cancel</button>
+        <button onclick="bcsvParse()" style="flex:1;padding:10px;background:linear-gradient(135deg,var(--navy),#25594a);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;">
+          <i class="ti ti-table-import"></i> Read CSV
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 2: Review -->
+    <div id="bcsv-step-2" style="display:none;">
+      <div id="bcsv-summary-banner" style="border-radius:10px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;"></div>
+
+      <!-- Column mapping (shown if auto-detect fails) -->
+      <div id="bcsv-col-map" style="display:none;background:var(--amber-light);border-radius:10px;padding:12px 14px;margin-bottom:12px;">
+        <div style="font-size:12px;font-weight:600;color:var(--amber);margin-bottom:10px;display:flex;align-items:center;gap:6px;"><i class="ti ti-adjustments"></i> Map columns — we couldn't auto-detect your bank's format</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;">
+          <div><div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">Date column</div><select id="bcsv-col-date" style="width:100%;padding:5px 7px;border:.5px solid var(--border);border-radius:5px;font-size:12px;background:#fff;"></select></div>
+          <div><div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">Description</div><select id="bcsv-col-desc" style="width:100%;padding:5px 7px;border:.5px solid var(--border);border-radius:5px;font-size:12px;background:#fff;"></select></div>
+          <div><div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">Debit / Out</div><select id="bcsv-col-debit" style="width:100%;padding:5px 7px;border:.5px solid var(--border);border-radius:5px;font-size:12px;background:#fff;"><option value="">— none —</option></select></div>
+          <div><div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">Credit / In</div><select id="bcsv-col-credit" style="width:100%;padding:5px 7px;border:.5px solid var(--border);border-radius:5px;font-size:12px;background:#fff;"><option value="">— none —</option></select></div>
+        </div>
+        <button onclick="bcsvApplyMapping()" style="margin-top:10px;background:var(--amber);color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;">Apply Mapping</button>
+      </div>
+
+      <div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
+        <span>Review — uncheck transactions to skip</span>
+        <button onclick="bcsvToggleAll()" id="bcsv-toggle-btn" style="background:none;border:none;cursor:pointer;color:var(--mint);font-size:12px;font-weight:600;">Deselect all</button>
+      </div>
+      <div id="bcsv-review-list" style="border:.5px solid var(--border);border-radius:10px;overflow:hidden;max-height:320px;overflow-y:auto;margin-bottom:12px;"></div>
+
+      <div class="modal-footer">
+        <button class="btn-ghost" onclick="bcsvGoBack()"><i class="ti ti-arrow-left"></i> Back</button>
+        <button id="bcsv-confirm-btn" onclick="bcsvConfirm()" style="flex:1;padding:10px;background:var(--mint);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;">
+          <i class="ti ti-circle-check"></i> <span id="bcsv-confirm-label">Import transactions</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="import-modal">
   <div class="modal" style="width:520px;max-width:calc(100vw - 2rem);max-height:calc(100vh - 2rem);overflow-y:auto;">
     <h3 style="display:flex;align-items:center;gap:8px;"><i class="ti ti-file-spreadsheet" style="color:var(--mint)"></i> Import CSV</h3>
@@ -2918,6 +3003,319 @@ function renderReports(){
   }).join(''):'<div class="no-data"><i class="ti ti-target"></i>No goals set yet.</div>';
 }
 
+// ── BANK CSV IMPORT ───────────────────────────────────────────────
+let bcsvFile=null, bcsvParsedRows=[], bcsvHeaders=[], bcsvRawRows=[];
+
+function openBankCsv(){
+  bcsvFile=null;bcsvParsedRows=[];bcsvHeaders=[];bcsvRawRows=[];
+  // Populate account selector
+  const sel=document.getElementById('bcsv-account');
+  sel.innerHTML='<option value="">— Select account —</option>';
+  accounts.forEach(a=>{const o=document.createElement('option');o.value=a.id;o.textContent=a.name;sel.appendChild(o);});
+  document.getElementById('bcsv-step-1').style.display='';
+  document.getElementById('bcsv-step-2').style.display='none';
+  document.getElementById('bcsv-file-preview').style.display='none';
+  document.getElementById('bcsv-dropzone').style.display='';
+  document.getElementById('bcsv-file-input').value='';
+  document.getElementById('bank-csv-modal').classList.add('open');
+}
+function closeBankCsv(){document.getElementById('bank-csv-modal').classList.remove('open');}
+function bcsvGoBack(){document.getElementById('bcsv-step-2').style.display='none';document.getElementById('bcsv-step-1').style.display='';}
+function bcsvHandleDrop(e){
+  e.preventDefault();
+  document.getElementById('bcsv-dropzone').style.borderColor='var(--border)';
+  document.getElementById('bcsv-dropzone').style.background='';
+  const file=e.dataTransfer.files[0];if(file)bcsvHandleFile(file);
+}
+function bcsvHandleFile(file){
+  if(!file)return;
+  bcsvFile=file;
+  document.getElementById('bcsv-file-name').textContent=`${file.name} (${(file.size/1024).toFixed(0)} KB)`;
+  document.getElementById('bcsv-file-preview').style.display='flex';
+  document.getElementById('bcsv-dropzone').style.display='none';
+}
+function bcsvClearFile(){
+  bcsvFile=null;
+  document.getElementById('bcsv-file-preview').style.display='none';
+  document.getElementById('bcsv-dropzone').style.display='';
+  document.getElementById('bcsv-file-input').value='';
+}
+
+function bcsvParseCSVText(text){
+  // Handle different line endings
+  const lines=text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n').filter(l=>l.trim());
+  const rows=lines.map(line=>{
+    const result=[];let cur='';let inQ=false;
+    for(let i=0;i<line.length;i++){
+      const c=line[i];
+      if(c==='"'){if(inQ&&line[i+1]==='"'){cur+='"';i++;}else{inQ=!inQ;}}
+      else if(c===','&&!inQ){result.push(cur.trim());cur='';}
+      else cur+=c;
+    }
+    result.push(cur.trim());
+    return result;
+  });
+  return rows;
+}
+
+function bcsvDetectFormat(headers){
+  // Normalise headers for comparison
+  const h=headers.map(x=>x.toLowerCase().replace(/[^a-z0-9]/g,''));
+  // Known bank formats
+  const formats=[
+    // PC Financial / President's Choice
+    {name:'pc',date:['transactiondate','date'],desc:['description','details'],debit:['debit','withdrawal','debitamount'],credit:['credit','deposit','creditamount']},
+    // CIBC
+    {name:'cibc',date:['date'],desc:['description','payee'],debit:['charges','debit','withdrawal'],credit:['deposits','credit','deposit']},
+    // TD
+    {name:'td',date:['date'],desc:['description'],debit:['debit'],credit:['credit']},
+    // RBC
+    {name:'rbc',date:['transactiondate','date'],desc:['description1','description'],debit:['cad','debit','withdrawals'],credit:['cad','credit','deposits']},
+    // BMO
+    {name:'bmo',date:['date'],desc:['description','payee'],debit:['withdrawals','debit'],credit:['deposits','credit']},
+    // Scotiabank
+    {name:'scotiabank',date:['date'],desc:['description'],debit:['withdrawals','debit'],credit:['deposits','credit']},
+    // Generic single-amount column
+    {name:'generic-single',date:['date'],desc:['description','payee','memo'],debit:[],credit:[],amount:['amount','transaction','net']},
+  ];
+
+  let bestMatch={dateIdx:-1,descIdx:-1,debitIdx:-1,creditIdx:-1,amountIdx:-1,score:0};
+
+  for(const fmt of formats){
+    let score=0;
+    const find=(names)=>{for(const n of names){const i=h.findIndex(x=>x.includes(n.replace(/[^a-z0-9]/g,'')));if(i>=0)return i;}return -1;};
+    const dateIdx=find(fmt.date);
+    const descIdx=find(fmt.desc);
+    const debitIdx=fmt.debit?.length?find(fmt.debit):-1;
+    const creditIdx=fmt.credit?.length?find(fmt.credit):-1;
+    const amountIdx=fmt.amount?.length?find(fmt.amount):-1;
+    if(dateIdx>=0)score+=2;
+    if(descIdx>=0)score+=2;
+    if(debitIdx>=0||creditIdx>=0||amountIdx>=0)score+=2;
+    if(score>bestMatch.score){bestMatch={dateIdx,descIdx,debitIdx,creditIdx,amountIdx,score};}
+  }
+  return bestMatch;
+}
+
+function bcsvParseDate(str){
+  if(!str)return null;
+  str=str.trim().replace(/["']/g,'');
+  // Try various date formats
+  const fmts=[
+    /^(\d{4})-(\d{1,2})-(\d{1,2})$/,       // 2026-07-01 (ISO)
+    /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/,      // 07/01/2026 or 1/7/2026
+    /^(\d{1,2})-(\d{1,2})-(\d{4})$/,        // 07-01-2026
+    /^(\d{4})\/(\d{1,2})\/(\d{1,2})$/,      // 2026/07/01
+    /^(\d{1,2})\/(\d{1,2})\/(\d{2})$/,      // 07/01/26
+  ];
+  for(const fmt of fmts){
+    const m=str.match(fmt);
+    if(m){
+      let y=parseInt(m[1]),mo=parseInt(m[2]),d=parseInt(m[3]);
+      // If year looks like day (<=31), it's MM/DD/YYYY or DD/MM/YYYY
+      if(y<=31){[y,d]=[d,y];}
+      // 2-digit year
+      if(y<100)y+=2000;
+      // Validate
+      if(y>=2000&&y<=2100&&mo>=1&&mo<=12&&d>=1&&d<=31){
+        return `${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      }
+    }
+  }
+  // Try natural date strings like "Jul 01, 2026"
+  const d=new Date(str);
+  if(!isNaN(d.getTime())){
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+  return null;
+}
+
+function bcsvParseAmount(str){
+  if(!str||str.trim()==='')return 0;
+  // Remove $, spaces, quotes, commas
+  const cleaned=str.replace(/[$,\s"']/g,'').replace(/\(([0-9.]+)\)/,'$1');
+  return Math.abs(parseFloat(cleaned)||0);
+}
+
+function bcsvSuggestCategory(payee){
+  if(!payee)return '';
+  const key=payee.trim().toLowerCase();
+  const map=buildPayeeMap();
+  // Exact match
+  if(map[key]?.lastCatId)return map[key].lastCatId;
+  // Partial match
+  for(const [k,v] of Object.entries(map)){
+    if(key.includes(k)||k.includes(key))if(v.lastCatId)return v.lastCatId;
+  }
+  return '';
+}
+
+async function bcsvParse(){
+  if(!bcsvFile){toast('Upload a CSV file first','error');return;}
+  const acctId=document.getElementById('bcsv-account').value;
+  if(!acctId){toast('Select an account','error');return;}
+
+  const text=await bcsvFile.text();
+  const rows=bcsvParseCSVText(text);
+  if(rows.length<2){toast('CSV file appears empty or invalid','error');return;}
+
+  // Find header row — first row with recognisable headers
+  let headerRowIdx=0;
+  for(let i=0;i<Math.min(5,rows.length);i++){
+    const h=rows[i].map(x=>x.toLowerCase());
+    if(h.some(x=>x.includes('date')||x.includes('description')||x.includes('amount'))){headerRowIdx=i;break;}
+  }
+  bcsvHeaders=rows[headerRowIdx];
+  bcsvRawRows=rows.slice(headerRowIdx+1).filter(r=>r.some(c=>c.trim()));
+
+  const mapping=bcsvDetectFormat(bcsvHeaders);
+
+  if(mapping.score>=4){
+    // Auto-detected — parse directly
+    bcsvBuildParsedRows(mapping,acctId);
+    bcsvShowReview(acctId);
+  } else {
+    // Show column mapper
+    bcsvBuildParsedRows(mapping,acctId);
+    const colOpts=bcsvHeaders.map((h,i)=>`<option value="${i}">${h||'Column '+(i+1)}</option>`).join('');
+    const noneOpt='<option value="">— none —</option>';
+    ['bcsv-col-date','bcsv-col-desc','bcsv-col-debit','bcsv-col-credit'].forEach(id=>{
+      const sel=document.getElementById(id);
+      sel.innerHTML=(id.includes('debit')||id.includes('credit')?noneOpt:'')+colOpts;
+    });
+    if(mapping.dateIdx>=0)document.getElementById('bcsv-col-date').value=mapping.dateIdx;
+    if(mapping.descIdx>=0)document.getElementById('bcsv-col-desc').value=mapping.descIdx;
+    if(mapping.debitIdx>=0)document.getElementById('bcsv-col-debit').value=mapping.debitIdx;
+    if(mapping.creditIdx>=0)document.getElementById('bcsv-col-credit').value=mapping.creditIdx;
+    document.getElementById('bcsv-col-map').style.display='';
+    bcsvShowReview(acctId);
+  }
+}
+
+function bcsvApplyMapping(){
+  const acctId=document.getElementById('bcsv-account').value;
+  const mapping={
+    dateIdx:parseInt(document.getElementById('bcsv-col-date').value)||0,
+    descIdx:parseInt(document.getElementById('bcsv-col-desc').value)||1,
+    debitIdx:document.getElementById('bcsv-col-debit').value!==''?parseInt(document.getElementById('bcsv-col-debit').value):-1,
+    creditIdx:document.getElementById('bcsv-col-credit').value!==''?parseInt(document.getElementById('bcsv-col-credit').value):-1,
+    amountIdx:-1,score:6
+  };
+  bcsvBuildParsedRows(mapping,acctId);
+  document.getElementById('bcsv-col-map').style.display='none';
+  bcsvShowReview(acctId);
+}
+
+function bcsvBuildParsedRows(mapping,acctId){
+  const payeeMap=buildPayeeMap();
+  bcsvParsedRows=[];
+  bcsvRawRows.forEach(row=>{
+    const dateStr=row[mapping.dateIdx]||'';
+    const desc=(row[mapping.descIdx]||'').trim();
+    const date=bcsvParseDate(dateStr);
+    if(!date||!desc)return;
+
+    let debit=mapping.debitIdx>=0?bcsvParseAmount(row[mapping.debitIdx]):0;
+    let credit=mapping.creditIdx>=0?bcsvParseAmount(row[mapping.creditIdx]):0;
+
+    // Single amount column
+    if(mapping.amountIdx>=0&&!debit&&!credit){
+      const raw=row[mapping.amountIdx]||'';
+      const amt=parseFloat(raw.replace(/[$,\s"']/g,'')||'0');
+      if(amt<0)debit=Math.abs(amt);else credit=amt;
+    }
+
+    if(!debit&&!credit)return;
+
+    const type=credit>0?'income':'expense';
+    const amount=credit>0?credit:debit;
+    const catId=type==='expense'?bcsvSuggestCategory(desc):'';
+
+    bcsvParsedRows.push({date,payee:desc,amount,type,catId,_selected:true});
+  });
+}
+
+function bcsvShowReview(acctId){
+  document.getElementById('bcsv-step-1').style.display='none';
+  document.getElementById('bcsv-step-2').style.display='';
+
+  const acct=accounts.find(a=>a.id===acctId);
+  const income=bcsvParsedRows.filter(r=>r.type==='income').reduce((s,r)=>s+r.amount,0);
+  const expenses=bcsvParsedRows.filter(r=>r.type==='expense').reduce((s,r)=>s+r.amount,0);
+  const skipped=bcsvRawRows.length-bcsvParsedRows.length;
+
+  const banner=document.getElementById('bcsv-summary-banner');
+  if(bcsvParsedRows.length===0){
+    banner.style.background='var(--coral-light)';banner.style.color='var(--coral)';
+    banner.innerHTML=`<i class="ti ti-alert-triangle" style="font-size:20px;flex-shrink:0;"></i><div><strong>No transactions found.</strong> The column mapping may be wrong — try adjusting it above.</div>`;
+    document.getElementById('bcsv-col-map').style.display='';
+    return;
+  }
+  banner.style.background='var(--mint-light)';banner.style.color='#0a6b4e';
+  banner.innerHTML=`<i class="ti ti-circle-check" style="font-size:20px;flex-shrink:0;"></i>
+    <div><div style="font-weight:600;font-size:14px;">Found ${bcsvParsedRows.length} transactions from ${acct?.name||'account'}</div>
+    <div style="font-size:12px;margin-top:2px;">Income: <strong>${fmt(income)}</strong> &nbsp;·&nbsp; Expenses: <strong>${fmt(expenses)}</strong>${skipped>0?` &nbsp;·&nbsp; ${skipped} rows skipped`:''}</div></div>`;
+
+  const catOptions=categories.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+
+  document.getElementById('bcsv-review-list').innerHTML=bcsvParsedRows.map((r,i)=>{
+    const isExp=r.type==='expense';
+    return`<div style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:.5px solid var(--border);${i===bcsvParsedRows.length-1?'border-bottom:none;':''}">
+      <input type="checkbox" id="bcsv-chk-${i}" checked onchange="bcsvUpdateCount()" style="width:15px;height:15px;accent-color:var(--mint);flex-shrink:0;">
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px;">
+          <div style="display:flex;align-items:center;gap:8px;min-width:0;">
+            <span style="font-size:11px;color:var(--text-muted);font-family:var(--mono);flex-shrink:0;">${r.date}</span>
+            <span style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.payee}</span>
+          </div>
+          <span style="font-family:var(--mono);font-size:13px;font-weight:600;flex-shrink:0;color:${isExp?'var(--coral)':'var(--mint)'};">${isExp?'-':'+'}&nbsp;${fmt(r.amount)}</span>
+        </div>
+        ${isExp?`<select onchange="bcsvParsedRows[${i}].catId=this.value" style="width:100%;padding:4px 8px;border:.5px solid var(--border);border-radius:5px;font-size:11px;background:var(--surface);outline:none;">
+          <option value="">— Assign category —</option>${catOptions.replace(`value="${r.catId}"`,`value="${r.catId}" selected`)}
+        </select>`:`<span style="font-size:11px;color:var(--mint);">Income → Ready to Assign</span>`}
+      </div>
+    </div>`;
+  }).join('');
+
+  bcsvUpdateCount();
+}
+
+function bcsvUpdateCount(){
+  const checked=bcsvParsedRows.filter((_,i)=>document.getElementById('bcsv-chk-'+i)?.checked).length;
+  document.getElementById('bcsv-confirm-label').textContent=`Import ${checked} transaction${checked!==1?'s':''}`;
+  document.getElementById('bcsv-toggle-btn').textContent=checked===bcsvParsedRows.length?'Deselect all':'Select all';
+}
+
+function bcsvToggleAll(){
+  const checked=bcsvParsedRows.filter((_,i)=>document.getElementById('bcsv-chk-'+i)?.checked).length;
+  const newState=checked!==bcsvParsedRows.length;
+  bcsvParsedRows.forEach((_,i)=>{const el=document.getElementById('bcsv-chk-'+i);if(el)el.checked=newState;});
+  bcsvUpdateCount();
+}
+
+function bcsvConfirm(){
+  const acctId=document.getElementById('bcsv-account').value;
+  let count=0;
+  bcsvParsedRows.forEach((r,i)=>{
+    if(!document.getElementById('bcsv-chk-'+i)?.checked)return;
+    // Skip duplicates — same date, payee, amount already in this account
+    const isDupe=transactions.some(t=>t.accountId===acctId&&t.date===r.date&&Math.abs(t.amount-r.amount)<0.01&&(t.payee||'').toLowerCase()===(r.payee||'').toLowerCase());
+    if(isDupe)return;
+    transactions.push({
+      id:uid(),type:r.type,amount:r.amount,payee:r.payee,
+      memo:'CSV Import',date:r.date,month:r.date.slice(0,7),
+      accountId:acctId,categoryId:r.catId||null,
+      cleared:true,_ts:Date.now()
+    });
+    count++;
+  });
+  const dupes=bcsvParsedRows.filter((_,i)=>document.getElementById('bcsv-chk-'+i)?.checked).length-count;
+  closeBankCsv();
+  if(acctId)renderAccountView(acctId);
+  renderAll();scheduleSave();refreshPayeeSuggestions();
+  toast(`✓ ${count} transaction${count!==1?'s':''} imported${dupes>0?` (${dupes} duplicates skipped)`:''}`);
+}
+
 // ── API KEY SETTINGS ──────────────────────────────────────────────
 function openApiKeyModal(){
   const existing=localStorage.getItem('gatos_anthropic_key')||'';
@@ -3981,7 +4379,7 @@ function setActiveNav(id){
 document.getElementById('nav-budget').addEventListener('click',()=>{showBudget();setActiveNav('nav-budget');});
 document.getElementById('nav-all-txns').addEventListener('click',()=>{showAllTxns();setActiveNav('nav-all-txns');});
 document.getElementById('nav-reports').addEventListener('click',()=>{showReports();setActiveNav('nav-reports');});
-document.getElementById('nav-import').addEventListener('click',openImportModal);
+document.getElementById('nav-import').addEventListener('click',openBankCsv);
 document.getElementById('nav-smart-import').addEventListener('click',openSmartImport);
 document.getElementById('nav-export').addEventListener('click',openExportModal);
 document.getElementById('nav-new-year').addEventListener('click',openNewYearModal);
@@ -3997,6 +4395,7 @@ document.getElementById('acct-modal').addEventListener('click',e=>{if(e.target==
 document.getElementById('import-modal').addEventListener('click',e=>{if(e.target===document.getElementById('import-modal'))closeImportModal();});
 document.getElementById('goal-modal').addEventListener('click',e=>{if(e.target===document.getElementById('goal-modal'))closeGoalModal();});
 document.getElementById('edit-acct-modal').addEventListener('click',e=>{if(e.target===document.getElementById('edit-acct-modal'))closeEditAcctModal();});
+document.getElementById('bank-csv-modal').addEventListener('click',e=>{if(e.target===document.getElementById('bank-csv-modal'))closeBankCsv();});
 document.getElementById('apikey-modal').addEventListener('click',e=>{if(e.target===document.getElementById('apikey-modal'))closeApiKeyModal();});
 document.getElementById('smart-import-modal').addEventListener('click',e=>{if(e.target===document.getElementById('smart-import-modal'))closeSmartImport();});
 document.getElementById('reconcile-modal').addEventListener('click',e=>{if(e.target===document.getElementById('reconcile-modal'))closeReconcileModal();});
