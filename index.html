@@ -629,9 +629,18 @@
           <div class="atb-meter-labels"><span>Unassigned</span><span id="atb-pct-label">0% assigned</span></div>
           <div class="atb-meter-track"><div class="atb-meter-fill" id="atb-meter" style="width:0%;background:var(--slate)"></div></div>
           <div class="atb-stats">
-            <div class="atb-stat"><div class="atb-stat-label">Income</div><div class="atb-stat-val positive-val" id="stat-income">$0.00</div></div>
-            <div class="atb-stat"><div class="atb-stat-label">Assigned</div><div class="atb-stat-val" id="stat-assigned">$0.00</div></div>
-            <div class="atb-stat"><div class="atb-stat-label">Used</div><div class="atb-stat-val" id="stat-activity">$0.00</div></div>
+            <div class="atb-stat" onclick="openAtbDrawer('income')" style="cursor:pointer;transition:opacity .15s;" onmouseenter="this.style.opacity='.8'" onmouseleave="this.style.opacity='1'" title="Click to see income transactions">
+              <div class="atb-stat-label">Income <i class="ti ti-chevron-right" style="font-size:10px;opacity:.6;"></i></div>
+              <div class="atb-stat-val positive-val" id="stat-income">$0.00</div>
+            </div>
+            <div class="atb-stat" onclick="openAtbDrawer('assigned')" style="cursor:pointer;transition:opacity .15s;" onmouseenter="this.style.opacity='.8'" onmouseleave="this.style.opacity='1'" title="Click to see assigned breakdown">
+              <div class="atb-stat-label">Assigned <i class="ti ti-chevron-right" style="font-size:10px;opacity:.6;"></i></div>
+              <div class="atb-stat-val" id="stat-assigned">$0.00</div>
+            </div>
+            <div class="atb-stat" onclick="openAtbDrawer('used')" style="cursor:pointer;transition:opacity .15s;" onmouseenter="this.style.opacity='.8'" onmouseleave="this.style.opacity='1'" title="Click to see spending transactions">
+              <div class="atb-stat-label">Used <i class="ti ti-chevron-right" style="font-size:10px;opacity:.6;"></i></div>
+              <div class="atb-stat-val" id="stat-activity">$0.00</div>
+            </div>
           </div>
         </div>
       </div>
@@ -1529,6 +1538,30 @@
       <i class="ti ti-circle-check"></i> Done — Save Assignments
     </button>
   </div>
+</div>
+
+<!-- ATB STATS DRAWER -->
+<div id="atb-drawer-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:300;" onclick="closeAtbDrawer()"></div>
+<div id="atb-drawer" style="position:fixed;top:0;right:0;width:440px;max-width:96vw;height:100%;background:var(--surface-card);box-shadow:-4px 0 32px rgba(0,0,0,.15);z-index:301;display:none;flex-direction:column;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);">
+  <!-- Header -->
+  <div id="atb-drawer-hero" style="padding:18px 20px 14px;flex-shrink:0;">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px;">
+      <div>
+        <div id="atb-drawer-label" style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:4px;"></div>
+        <div id="atb-drawer-total" style="font-family:var(--mono);font-size:32px;font-weight:700;color:#fff;line-height:1;"></div>
+        <div id="atb-drawer-month" style="font-size:12px;color:rgba(255,255,255,.45);margin-top:5px;"></div>
+      </div>
+      <button onclick="closeAtbDrawer()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="ti ti-x"></i></button>
+    </div>
+  </div>
+  <!-- Sub tabs for income/used (by account) -->
+  <div id="atb-drawer-tabs" style="display:none;border-bottom:.5px solid var(--border);padding:0 16px;background:var(--surface);flex-shrink:0;"></div>
+  <!-- List -->
+  <div style="padding:10px 16px 6px;border-bottom:.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:var(--surface);">
+    <div style="font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--text-secondary);" id="atb-drawer-list-title"></div>
+    <span id="atb-drawer-count" style="font-size:11px;color:var(--text-muted);"></span>
+  </div>
+  <div id="atb-drawer-list" style="flex:1;overflow-y:auto;"></div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -3001,6 +3034,113 @@ function renderReports(){
       </div>
     </div>`;
   }).join(''):'<div class="no-data"><i class="ti ti-target"></i>No goals set yet.</div>';
+}
+
+// ── ATB STATS DRAWER ──────────────────────────────────────────────
+function openAtbDrawer(type){
+  const month=currentMonth;
+  const[y,m]=month.split('-');
+  const monthName=new Date(+y,+m-1,1).toLocaleDateString('en-US',{month:'long',year:'numeric'});
+  const hero=document.getElementById('atb-drawer-hero');
+  const overlay=document.getElementById('atb-drawer-overlay');
+  const drawer=document.getElementById('atb-drawer');
+
+  if(type==='income'){
+    const txns=transactions.filter(t=>t.type==='income'&&t.month===month).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+    const total=txns.reduce((s,t)=>s+t.amount,0);
+    hero.style.background='linear-gradient(135deg,#1e3a2f,#1a7a5a)';
+    document.getElementById('atb-drawer-label').textContent='Income';
+    document.getElementById('atb-drawer-total').textContent=fmt(total);
+    document.getElementById('atb-drawer-total').style.color='#7de8b8';
+    document.getElementById('atb-drawer-month').textContent=monthName;
+    document.getElementById('atb-drawer-tabs').style.display='none';
+    document.getElementById('atb-drawer-list-title').textContent='Income Transactions';
+    document.getElementById('atb-drawer-count').textContent=txns.length+' transaction'+(txns.length!==1?'s':'');
+    document.getElementById('atb-drawer-list').innerHTML=txns.length
+      ?txns.map(t=>atbDrawerRow(t,'income')).join('')
+      :`<div style="padding:2rem;text-align:center;color:var(--text-muted);"><i class="ti ti-receipt-off" style="font-size:28px;display:block;margin-bottom:8px;"></i>No income recorded for ${monthName}</div>`;
+
+  }else if(type==='used'){
+    const txns=transactions.filter(t=>t.type==='expense'&&t.month===month).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+    const total=txns.reduce((s,t)=>s+t.amount,0);
+    hero.style.background='linear-gradient(135deg,#3a1a1a,#8b3a2a)';
+    document.getElementById('atb-drawer-label').textContent='Used (Spending)';
+    document.getElementById('atb-drawer-total').textContent=fmt(total);
+    document.getElementById('atb-drawer-total').style.color='#ffb3aa';
+    document.getElementById('atb-drawer-month').textContent=monthName;
+    document.getElementById('atb-drawer-tabs').style.display='none';
+    document.getElementById('atb-drawer-list-title').textContent='Expense Transactions';
+    document.getElementById('atb-drawer-count').textContent=txns.length+' transaction'+(txns.length!==1?'s':'');
+    document.getElementById('atb-drawer-list').innerHTML=txns.length
+      ?txns.map(t=>atbDrawerRow(t,'expense')).join('')
+      :`<div style="padding:2rem;text-align:center;color:var(--text-muted);"><i class="ti ti-receipt-off" style="font-size:28px;display:block;margin-bottom:8px;"></i>No expenses recorded for ${monthName}</div>`;
+
+  }else if(type==='assigned'){
+    // Assigned = breakdown by category
+    const totalAssigned=categories.reduce((s,c)=>s+((c.assigned||{})[month]||0),0);
+    hero.style.background='linear-gradient(135deg,#1e3a2f,#25594a)';
+    document.getElementById('atb-drawer-label').textContent='Assigned to Categories';
+    document.getElementById('atb-drawer-total').textContent=fmt(totalAssigned);
+    document.getElementById('atb-drawer-total').style.color='#fff';
+    document.getElementById('atb-drawer-month').textContent=monthName;
+    document.getElementById('atb-drawer-tabs').style.display='none';
+    const assignedCats=categories.filter(c=>((c.assigned||{})[month]||0)>0).sort((a,b)=>((b.assigned||{})[month]||0)-((a.assigned||{})[month]||0));
+    document.getElementById('atb-drawer-list-title').textContent='Category Assignments';
+    document.getElementById('atb-drawer-count').textContent=assignedCats.length+' categor'+(assignedCats.length!==1?'ies':'y');
+    document.getElementById('atb-drawer-list').innerHTML=assignedCats.length
+      ?assignedCats.map(cat=>{
+        const assigned=(cat.assigned||{})[month]||0;
+        const activity=calcCatActivity(cat.id,month);
+        const available=assigned-activity;
+        const pct=assigned>0?Math.min(100,(activity/assigned)*100):0;
+        return`<div style="display:flex;align-items:center;gap:10px;padding:11px 16px;border-bottom:.5px solid var(--border);cursor:pointer;transition:background .1s;" onclick="closeAtbDrawer();showCategoryView('${cat.id}')" onmouseenter="this.style.background='var(--surface)'" onmouseleave="this.style.background=''">
+          <span style="width:9px;height:9px;border-radius:50%;background:${cat.color||'#888'};flex-shrink:0;display:inline-block;"></span>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:500;margin-bottom:3px;">${cat.name}</div>
+            <div style="background:var(--border);border-radius:2px;height:3px;overflow:hidden;"><div style="width:${pct}%;height:100%;background:${pct>100?'var(--coral)':'var(--mint)'};border-radius:2px;"></div></div>
+          </div>
+          <div style="text-align:right;flex-shrink:0;">
+            <div style="font-family:var(--mono);font-size:13px;font-weight:600;">${fmt(assigned)}</div>
+            <div style="font-size:10px;color:${available<0?'var(--coral)':available===0?'var(--text-muted)':'var(--mint)'};margin-top:1px;">${available>=0?'+':''}${fmt(available)} left</div>
+          </div>
+          <i class="ti ti-chevron-right" style="font-size:12px;color:var(--text-muted);flex-shrink:0;"></i>
+        </div>`;
+      }).join('')
+      :`<div style="padding:2rem;text-align:center;color:var(--text-muted);"><i class="ti ti-layout-list" style="font-size:28px;display:block;margin-bottom:8px;"></i>Nothing assigned yet for ${monthName}</div>`;
+  }
+
+  overlay.style.display='block';
+  drawer.style.display='flex';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{drawer.style.transform='translateX(0)';}));
+}
+
+function atbDrawerRow(t,type){
+  const catName=getCatName(t);
+  const acctName=getAcctName(t.accountId);
+  const isExp=type==='expense';
+  return`<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:.5px solid var(--border);cursor:pointer;transition:background .1s;" onclick="closeAtbDrawer();if('${t.accountId}')jumpToTransaction('${t.id}','${t.accountId}')" onmouseenter="this.style.background='var(--surface)'" onmouseleave="this.style.background=''">
+    <div style="width:32px;height:32px;background:${isExp?'var(--coral-light)':'var(--mint-light)'};border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+      <i class="ti ${isExp?'ti-arrow-up-circle':'ti-arrow-down-circle'}" style="color:${isExp?'var(--coral)':'var(--mint)'};font-size:16px;"></i>
+    </div>
+    <div style="flex:1;min-width:0;">
+      <div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.payee||'—'}${t.memo?` <span style="color:var(--text-muted);font-size:11px;">· ${t.memo}</span>`:''}</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:2px;display:flex;align-items:center;gap:5px;">
+        <span class="${t.cleared?'cleared-dot':'uncleared-dot'}"></span>
+        <span>${catName}</span>${acctName?`<span>· ${acctName}</span>`:''}
+      </div>
+    </div>
+    <div style="text-align:right;flex-shrink:0;">
+      <div style="font-family:var(--mono);font-size:13px;font-weight:600;color:${isExp?'var(--coral)':'var(--mint)'};">${isExp?'-':'+'}${fmt(t.amount)}</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:1px;">${formatDate(t.date)}</div>
+    </div>
+    <i class="ti ti-chevron-right" style="font-size:12px;color:var(--text-muted);flex-shrink:0;"></i>
+  </div>`;
+}
+
+function closeAtbDrawer(){
+  const drawer=document.getElementById('atb-drawer');
+  drawer.style.transform='translateX(100%)';
+  setTimeout(()=>{drawer.style.display='none';document.getElementById('atb-drawer-overlay').style.display='none';},280);
 }
 
 // ── BANK CSV IMPORT ───────────────────────────────────────────────
