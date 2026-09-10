@@ -892,6 +892,7 @@
       <div class="tabs" style="background:var(--surface-card);border:.5px solid var(--border);border-radius:14px 14px 0 0;margin-bottom:0;padding:0 1rem;">
         <button class="tab active" id="rtab-monthly" onclick="setReportTab('monthly')">Monthly</button>
         <button class="tab" id="rtab-yearly" onclick="setReportTab('yearly')">Yearly Summary</button>
+        <button class="tab" id="rtab-plan" onclick="setReportTab('plan')">🎯 2027 Budget Plan</button>
       </div>
 
       <!-- MONTHLY TAB -->
@@ -943,6 +944,78 @@
             <table id="yearly-table" style="width:100%;border-collapse:collapse;min-width:800px;">
               <thead id="yearly-thead"></thead>
               <tbody id="yearly-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2027 BUDGET PLAN TAB -->
+      <div id="report-tab-plan" style="display:none;padding-top:1rem;">
+
+        <!-- Income warning banner -->
+        <div style="background:linear-gradient(135deg,#3a1a1a,#6b2a1a);border-radius:14px;padding:1.25rem 1.5rem;margin-bottom:1rem;display:flex;gap:1.5rem;align-items:center;flex-wrap:wrap;">
+          <div style="flex:1;min-width:200px;">
+            <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:4px;">⚠ Income Gap — EI Ends January 2027</div>
+            <div style="font-family:var(--mono);font-size:32px;font-weight:700;color:#ffb3aa;line-height:1;">-$3,964/mo</div>
+            <div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:4px;">Monthly income lost when EI ends</div>
+          </div>
+          <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
+            <div style="background:rgba(255,255,255,.1);border-radius:10px;padding:10px 14px;min-width:110px;">
+              <div style="font-size:9px;letter-spacing:.8px;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:3px;">2026 Income</div>
+              <div style="font-family:var(--mono);font-size:16px;font-weight:600;color:#7de8b8;">$10,547/mo</div>
+            </div>
+            <div style="background:rgba(255,255,255,.1);border-radius:10px;padding:10px 14px;min-width:110px;">
+              <div style="font-size:9px;letter-spacing:.8px;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:3px;">2027 Income</div>
+              <div style="font-family:var(--mono);font-size:16px;font-weight:600;color:#ffb3aa;">$6,583/mo</div>
+            </div>
+            <div style="background:rgba(255,255,255,.1);border-radius:10px;padding:10px 14px;min-width:110px;">
+              <div style="font-size:9px;letter-spacing:.8px;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:3px;">2027 Budget</div>
+              <div style="font-family:var(--mono);font-size:16px;font-weight:600;color:#fff;">$7,751/mo</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Plan selector month -->
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:1rem;flex-wrap:wrap;">
+          <div style="font-size:13px;color:var(--text-secondary);">Compare against actual spending for:</div>
+          <select id="plan-compare-month" onchange="renderPlanTab()" style="padding:6px 10px;border:.5px solid var(--border);border-radius:6px;font-size:13px;background:var(--surface);outline:none;"></select>
+          <div style="font-size:12px;color:var(--text-muted);background:var(--surface);border-radius:6px;padding:5px 10px;border:.5px solid var(--border);">🟢 Under target &nbsp; 🔴 Over target &nbsp; ⚪ No data yet</div>
+        </div>
+
+        <!-- Income sources table -->
+        <div class="panel" style="margin-bottom:1rem;">
+          <div class="panel-header"><div class="panel-title"><i class="ti ti-trending-up"></i> Monthly Income Sources</div></div>
+          <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;">
+              <thead><tr style="background:var(--surface);">
+                <th style="padding:8px 14px;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text-muted);text-align:left;border-bottom:.5px solid var(--border);">Source</th>
+                <th style="padding:8px 14px;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text-muted);text-align:right;border-bottom:.5px solid var(--border);">2026 Avg/mo</th>
+                <th style="padding:8px 14px;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text-muted);text-align:right;border-bottom:.5px solid var(--border);">2027 Target</th>
+                <th style="padding:8px 14px;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text-muted);text-align:right;border-bottom:.5px solid var(--border);">Change</th>
+              </tr></thead>
+              <tbody id="plan-income-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Spending plan table -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title"><i class="ti ti-chart-bar"></i> 2027 Spending Plan vs Actual</div>
+            <div style="font-size:12px;color:var(--text-muted);">Actual = transactions in selected month</div>
+          </div>
+          <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;">
+              <thead><tr style="background:var(--surface);">
+                <th style="padding:8px 14px;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text-muted);text-align:left;border-bottom:.5px solid var(--border);min-width:140px;">Category</th>
+                <th style="padding:8px 14px;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text-muted);text-align:left;border-bottom:.5px solid var(--border);">Type</th>
+                <th style="padding:8px 14px;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text-muted);text-align:right;border-bottom:.5px solid var(--border);">2026 Avg</th>
+                <th style="padding:8px 14px;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text-muted);text-align:right;border-bottom:.5px solid var(--border);">2027 Target</th>
+                <th style="padding:8px 14px;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text-muted);text-align:right;border-bottom:.5px solid var(--border);">Actual</th>
+                <th style="padding:8px 14px;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text-muted);text-align:right;border-bottom:.5px solid var(--border);">vs Target</th>
+                <th style="padding:8px 14px;border-bottom:.5px solid var(--border);min-width:120px;"></th>
+              </tr></thead>
+              <tbody id="plan-spending-tbody"></tbody>
             </table>
           </div>
         </div>
@@ -2768,16 +2841,148 @@ function closeReportCatDrawer(){
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'&&document.getElementById('report-cat-drawer')?.style.transform==='translateX(0px)')closeReportCatDrawer();
 });
+// ── 2027 BUDGET PLAN ─────────────────────────────────────────────
+const PLAN_INCOME=[
+  {source:'Salary — Go Way Travel',avg2026:4616,target2027:4616},
+  {source:'EI Benefits / 2nd income',avg2026:2496,target2027:1300},
+  {source:'Gov benefits (CCB etc.)',avg2026:667,target2027:667},
+  {source:'Tax refunds (annualized)',avg2026:902,target2027:0,note:'Not monthly cash'},
+  {source:'Other deposits / e-transfers',avg2026:1866,target2027:0,note:'Unreliable'},
+];
+
+const PLAN_SPENDING=[
+  // [category, type, avg2026, target2027, matchKeywords]
+  {cat:'Rent',type:'Essential',avg:2058,target:2058,keys:['rent']},
+  {cat:'Daycare',type:'Essential',avg:796,target:850,keys:['daycare','garderie']},
+  {cat:'Groceries',type:'Essential',avg:674,target:675,keys:['groceries','grocery','no frills','loblaws','metro','walmart','food']},
+  {cat:'Transportation',type:'Essential',avg:484,target:485,keys:['transportation','presto','gas','transit','uber','lyft','parking']},
+  {cat:'Cellphone',type:'Essential',avg:133,target:122,keys:['cellphone','cell','phone','mobile','koodo','fido','rogers','bell']},
+  {cat:'Internet',type:'Essential',avg:64,target:63,keys:['internet','wifi','cable','rogers','bell']},
+  {cat:'OSAP',type:'Essential (debt)',avg:150,target:150,keys:['osap']},
+  {cat:'Medical',type:'Essential',avg:91,target:100,keys:['medical','pharmacy','doctor','dental','prescri','shopper']},
+  {cat:'Insurance (Rental)',type:'Essential',avg:61,target:61,keys:['insurance']},
+  {cat:'Quito Apartment',type:'Essential',avg:0,target:450,keys:['quito','apartment']},
+  {cat:'Household',type:'Semi-essential',avg:697,target:400,keys:['household','home','dollarama','ikea','canadian tire']},
+  {cat:'Cosmetics & Personal Care',type:'Semi-essential',avg:171,target:125,keys:['cosmetics','personal','beauty','hair','salon']},
+  {cat:'Clothing',type:'Semi-essential',avg:3,target:50,keys:['clothing','clothes','fashion','h&m','zara']},
+  {cat:'RESP',type:'Flexible commitment',avg:417,target:417,keys:['resp','wealthsimple resp']},
+  {cat:'Entertainment / Kids Fun',type:'Discretionary',avg:427,target:500,keys:['entertainment','kids','fun','cinema','movie','museum']},
+  {cat:'Eating Out',type:'Discretionary',avg:335,target:100,keys:['eating out','restaurant','ramen','gelato','food','mcdonald','tim horton','subway','pizza']},
+  {cat:'Cash & E-transfers',type:'Discretionary',avg:326,target:100,keys:['cash','e-transfer','etransfer']},
+  {cat:'Vacation',type:'Discretionary',avg:1947,target:500,keys:['vacation','hotel','flight','airbnb','booking','expedia','trivago']},
+  {cat:'Wealthsimple',type:'Discretionary (pause)',avg:1878,target:545,keys:['wealthsimple','tfsa','rrsp','invest']},
+  {cat:'Masha Fun',type:'Discretionary',avg:30,target:0,keys:['masha']},
+];
+
+const TYPE_COLORS={
+  'Essential':'#0a6b4e',
+  'Essential (debt)':'#2a4fd4',
+  'Semi-essential':'#7a4a05',
+  'Flexible commitment':'#5b2d8a',
+  'Discretionary':'#8a3a2a',
+  'Discretionary (pause)':'#6b3a1a',
+};
+const TYPE_BG={
+  'Essential':'#e4f5ee',
+  'Essential (debt)':'#f0f4ff',
+  'Semi-essential':'#fef4e0',
+  'Flexible commitment':'#f5f0ff',
+  'Discretionary':'#fdf0ee',
+  'Discretionary (pause)':'#fff0e8',
+};
+
+function renderPlanTab(){
+  const month=document.getElementById('plan-compare-month')?.value||currentMonth;
+
+  // Income table
+  const totalAvg=PLAN_INCOME.reduce((s,r)=>s+r.avg2026,0);
+  const total2027=PLAN_INCOME.reduce((s,r)=>s+r.target2027,0);
+  document.getElementById('plan-income-tbody').innerHTML=PLAN_INCOME.map(r=>{
+    const change=r.target2027-r.avg2026;
+    const changeStr=change===0?'—':(change>0?'+':'')+fmt(change);
+    const changeCls=change<0?'color:var(--coral)':change>0?'color:var(--mint)':'color:var(--text-muted)';
+    return`<tr style="border-bottom:.5px solid var(--border);">
+      <td style="padding:9px 14px;font-size:13px;font-weight:500;">${r.source}${r.note?` <span style="font-size:11px;color:var(--text-muted);">(${r.note})</span>`:''}${r.target2027===0?` <span style="font-size:10px;background:#fdf0ee;color:var(--coral);padding:1px 6px;border-radius:3px;margin-left:4px;">Not counted</span>`:''}</td>
+      <td style="padding:9px 14px;font-family:var(--mono);font-size:12px;text-align:right;color:var(--text-secondary);">${r.avg2026>0?fmt(r.avg2026):'—'}</td>
+      <td style="padding:9px 14px;font-family:var(--mono);font-size:12px;text-align:right;font-weight:600;">${r.target2027>0?fmt(r.target2027):'$0'}</td>
+      <td style="padding:9px 14px;font-family:var(--mono);font-size:12px;text-align:right;font-weight:600;${changeCls}">${changeStr}</td>
+    </tr>`;
+  }).join('')+`<tr style="background:var(--surface);">
+    <td style="padding:9px 14px;font-size:13px;font-weight:700;">Total Income</td>
+    <td style="padding:9px 14px;font-family:var(--mono);font-size:13px;font-weight:700;text-align:right;">${fmt(totalAvg)}</td>
+    <td style="padding:9px 14px;font-family:var(--mono);font-size:13px;font-weight:700;text-align:right;color:var(--coral);">${fmt(total2027)}</td>
+    <td style="padding:9px 14px;font-family:var(--mono);font-size:13px;font-weight:700;text-align:right;color:var(--coral);">-${fmt(totalAvg-total2027)}</td>
+  </tr>`;
+
+  // Spending table — match categories by keywords
+  const matchActual=(keywords)=>{
+    return transactions.filter(t=>{
+      if(t.type!=='expense'||t.month!==month)return false;
+      const cat=categories.find(c=>c.id===t.categoryId);
+      const catName=(cat?.name||'').toLowerCase();
+      const payee=(t.payee||'').toLowerCase();
+      return keywords.some(k=>catName.includes(k)||payee.includes(k));
+    }).reduce((s,t)=>s+t.amount,0);
+  };
+
+  let totalAvgSpend=0,total2027Spend=0,totalActual=0;
+  document.getElementById('plan-spending-tbody').innerHTML=PLAN_SPENDING.map(r=>{
+    const actual=matchActual(r.keys);
+    const vs=r.target>0?actual-r.target:0;
+    const pct=r.target>0?Math.min(100,(actual/r.target)*100):0;
+    const barColor=actual===0?'var(--border)':actual>r.target?'var(--coral)':'var(--mint)';
+    totalAvgSpend+=r.avg;total2027Spend+=r.target;totalActual+=actual;
+    const vsStr=r.target===0?'—':vs===0?'$0':(vs>0?'+':'')+fmt(vs);
+    const vsCls=vs>0?'color:var(--coral);font-weight:700':vs<0?'color:var(--mint);font-weight:700':'color:var(--text-muted)';
+    const typeColor=TYPE_COLORS[r.type]||'var(--text-muted)';
+    const typeBg=TYPE_BG[r.type]||'var(--surface)';
+    return`<tr style="border-bottom:.5px solid var(--border);">
+      <td style="padding:8px 14px;font-size:13px;font-weight:500;">${r.cat}</td>
+      <td style="padding:8px 14px;"><span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px;background:${typeBg};color:${typeColor};white-space:nowrap;">${r.type}</span></td>
+      <td style="padding:8px 14px;font-family:var(--mono);font-size:12px;text-align:right;color:var(--text-muted);">${r.avg>0?fmt(r.avg):'—'}</td>
+      <td style="padding:8px 14px;font-family:var(--mono);font-size:12px;text-align:right;font-weight:600;">${r.target>0?fmt(r.target):'—'}</td>
+      <td style="padding:8px 14px;font-family:var(--mono);font-size:12px;text-align:right;">${actual>0?fmt(actual):'—'}</td>
+      <td style="padding:8px 14px;font-family:var(--mono);font-size:12px;text-align:right;${vsCls}">${vsStr}</td>
+      <td style="padding:8px 14px;">
+        ${r.target>0?`<div style="background:var(--border);border-radius:3px;height:6px;overflow:hidden;"><div style="width:${pct}%;height:100%;background:${barColor};border-radius:3px;transition:width .4s;"></div></div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:2px;text-align:right;">${actual===0?'No data yet':pct.toFixed(0)+'% of target'}</div>`:''}
+      </td>
+    </tr>`;
+  }).join('')+`<tr style="background:var(--surface);border-top:.5px solid var(--border);">
+    <td style="padding:9px 14px;font-size:13px;font-weight:700;">Total Spending</td>
+    <td></td>
+    <td style="padding:9px 14px;font-family:var(--mono);font-size:13px;font-weight:700;text-align:right;color:var(--text-muted);">${fmt(totalAvgSpend)}</td>
+    <td style="padding:9px 14px;font-family:var(--mono);font-size:13px;font-weight:700;text-align:right;">${fmt(total2027Spend)}</td>
+    <td style="padding:9px 14px;font-family:var(--mono);font-size:13px;font-weight:700;text-align:right;">${totalActual>0?fmt(totalActual):'—'}</td>
+    <td style="padding:9px 14px;font-family:var(--mono);font-size:13px;font-weight:700;text-align:right;color:${totalActual>total2027Spend?'var(--coral)':'var(--mint)'};">${totalActual>0?(totalActual>total2027Spend?'+':'')+fmt(totalActual-total2027Spend):'—'}</td>
+    <td></td>
+  </tr>`;
+}
+
 // ── REPORTS ───────────────────────────────────────────────────────
 let currentReportTab='monthly';
 
 function setReportTab(tab){
   currentReportTab=tab;
-  document.getElementById('rtab-monthly').className='tab'+(tab==='monthly'?' active':'');
-  document.getElementById('rtab-yearly').className='tab'+(tab==='yearly'?' active':'');
-  document.getElementById('report-tab-monthly').style.display=tab==='monthly'?'':'none';
-  document.getElementById('report-tab-yearly').style.display=tab==='yearly'?'':'none';
+  ['monthly','yearly','plan'].forEach(t=>{
+    document.getElementById('rtab-'+t).className='tab'+(tab===t?' active':'');
+    document.getElementById('report-tab-'+t).style.display=tab===t?'':'none';
+  });
   if(tab==='yearly') renderYearlyReport();
+  else if(tab==='plan'){
+    // Populate month selector
+    const sel=document.getElementById('plan-compare-month');
+    if(sel){
+      const months=[...new Set(transactions.map(t=>t.month).filter(Boolean))].sort().reverse();
+      if(!months.includes(currentMonth))months.unshift(currentMonth);
+      sel.innerHTML=months.slice(0,24).map(m=>{
+        const[y,mo]=m.split('-');
+        const label=new Date(+y,+mo-1,1).toLocaleDateString('en-US',{month:'long',year:'numeric'});
+        return`<option value="${m}"${m===currentMonth?' selected':''}>${label}</option>`;
+      }).join('');
+    }
+    renderPlanTab();
+  }
 }
 
 function populateYearSelect(){
