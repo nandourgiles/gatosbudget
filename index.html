@@ -1855,7 +1855,7 @@ function renderCategories(){
   Object.entries(groups).forEach(([group,cats])=>{
     html+=`<tr class="cat-group-row"><td colspan="7" style="padding:4px 8px 4px 10px;">
       <div style="display:flex;align-items:center;justify-content:space-between;">
-        <span>${group}</span>
+        <span style="cursor:pointer;border-bottom:1px dotted var(--border);" title="Click to rename group" onclick="startRenameGroup('${group.replace(/'/g,"\\'")}',this)">${group}</span>
         <button onclick="quickAddCategory('${group.replace(/'/g,"\\'")}');event.stopPropagation();" style="background:#e4f5ee;border:.5px solid rgba(26,170,124,.3);color:#0a6b4e;font-size:10px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:3px;padding:2px 7px;border-radius:4px;transition:opacity .15s;" onmouseenter="this.style.background='#d0eed8'" onmouseleave="this.style.background='#e4f5ee'">
           <i class="ti ti-plus" style="font-size:11px;"></i> Add
         </button>
@@ -1899,7 +1899,7 @@ function renderCategories(){
       html+=`<tr draggable="true" data-cat-id="${cat.id}" data-cat-group="${group}"
           ondragstart="catDragStart(event)" ondragover="catDragOver(event)" ondragleave="catDragLeave(event)" ondrop="catDrop(event)" ondragend="catDragEnd(event)">
         <td><i class="ti ti-grip-vertical cat-drag-handle" title="Drag to reorder"></i></td>
-        <td><span class="cat-dot" style="background:${cat.color||'#888'}"></span><span class="cat-name">${cat.name}</span></td>
+        <td><span class="cat-dot" style="background:${cat.color||'#888'}"></span><span class="cat-name" title="Click to rename" style="cursor:pointer;border-bottom:1px dotted var(--border);" onclick="startRenameCat('${cat.id}',this)">${cat.name}</span></td>
         <td><input class="assigned-edit mono" type="number" step="0.01" value="${assigned.toFixed(2)}" onchange="updateAssigned('${cat.id}',this.value)" onblur="updateAssigned('${cat.id}',this.value)"></td>
         <td class="mono ${activity>0?'negative-val':''}" style="${activity>0?'cursor:pointer;text-decoration:underline dotted;':''}" onclick="${activity>0?`showCategoryView('${cat.id}')`:''}" title="${activity>0?'Click to see transactions':''}">${activity>0?'-':''}${fmt(activity)}</td>        <td><span class="avail-pill ${ac}">${fmt(available)}</span></td>
         <td>${goalCell}</td>
@@ -2399,6 +2399,42 @@ function toggleGoalAmount(){
     const labels={monthly:'Monthly spending limit ($)',savings:'Total savings target ($)',bill:'Fixed bill amount ($)'};
     document.getElementById('goal-amount-label').textContent=labels[type]||'Goal amount';
   }
+}
+
+function startRenameGroup(oldGroup, span){
+  const inp=document.createElement('input');
+  inp.type='text';inp.value=oldGroup;
+  inp.style.cssText='font-size:12px;font-weight:700;border:.5px solid var(--mint);border-radius:5px;padding:2px 7px;outline:none;width:160px;text-transform:uppercase;letter-spacing:1px;box-shadow:0 0 0 2px rgba(26,170,124,.15);';
+  span.replaceWith(inp);inp.focus();inp.select();
+  const save=()=>{
+    const val=inp.value.trim();
+    if(val&&val!==oldGroup){
+      categories.forEach(c=>{if(c.group===oldGroup)c.group=val;});
+      scheduleSave();toast('Group renamed');
+    }
+    renderCategories();
+  };
+  inp.onblur=save;
+  inp.onkeydown=e=>{if(e.key==='Enter')inp.blur();if(e.key==='Escape'){inp.value=oldGroup;inp.blur();}e.stopPropagation();};
+}
+
+function startRenameCat(catId, nameSpan){
+  const cat=categories.find(c=>c.id===catId);
+  if(!cat)return;
+  const old=cat.name;
+  const inp=document.createElement('input');
+  inp.type='text';
+  inp.value=old;
+  inp.style.cssText='font-size:13px;font-weight:500;border:.5px solid var(--mint);border-radius:5px;padding:2px 6px;outline:none;width:140px;font-family:var(--font-sans);box-shadow:0 0 0 2px rgba(26,170,124,.15);';
+  nameSpan.replaceWith(inp);
+  inp.focus();inp.select();
+  const save=()=>{
+    const val=inp.value.trim();
+    if(val&&val!==old){cat.name=val;scheduleSave();toast('Category renamed');}
+    renderCategories();refreshPayeeSuggestions();
+  };
+  inp.onblur=save;
+  inp.onkeydown=e=>{if(e.key==='Enter'){inp.blur();}if(e.key==='Escape'){inp.value=old;inp.blur();}e.stopPropagation();};
 }
 
 function quickAddCategory(group){
