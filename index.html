@@ -8,8 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Gato's Budget">
 <meta name="theme-color" content="#1e3a2f">
-
-  <title>Gato's Budget</title>
+<title>Gato's Budget</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.0.0/dist/tabler-icons.min.css">
 <style>
   :root {
@@ -1708,8 +1707,8 @@
 <script>
 // ── CONFIG ──────────────────────────────────────────────────────
 const CLIENT_ID = '928717284513-okmg6bjmutmnil9sk08573g7egg15vc0.apps.googleusercontent.com';
-const SCOPES_OWNER  = 'https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/drive.file';
-const SCOPES_MEMBER = 'https://www.googleapis.com/auth/drive.file';
+const SCOPES_OWNER  = 'https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive';
+const SCOPES_MEMBER = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive';
 const SCOPES = SCOPES_OWNER; // default
 const FILE_NAME = 'zerobudget-data.json';
 
@@ -1821,6 +1820,22 @@ async function loadFromDrive(){
     // Family member: use owner's shared file directly
     if(familyRole==='member'&&sharedFileId){
       driveFileId=sharedFileId;
+      // Members read the shared file (which is in owner's regular Drive, not appDataFolder)
+      const r=await fetch(`https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`,{headers:{Authorization:'Bearer '+accessToken}});
+      if(r.status===200){
+        const t=await r.text();
+        if(t&&t.trim().startsWith('{')){
+          const d=JSON.parse(t);
+          categories=d.categories||[];transactions=d.transactions||[];accounts=d.accounts||[];budgetName=d.budgetName||'Budget';
+          updateLogoName();
+          localStorage.setItem('gatos_local_backup',t);
+          localStorage.setItem('gatos_backup_time',new Date().toISOString());
+        }
+      } else {
+        throw new Error('Cannot access shared file — ask the owner to re-generate the invite link');
+      }
+      setSyncStatus('synced','Up to date · Shared budget');lastSyncTime=new Date();renderAll();refreshPayeeSuggestions();
+      return;
     } else {
       driveFileId=await findOrCreateFile();
       // First load as owner — save file ID for sharing
@@ -1862,7 +1877,12 @@ async function loadFromDrive(){
 }
 
 async function saveToDrive(){
-  if(!accessToken||!driveFileId)return;
+  if(!accessToken)return;
+  // Members save to the shared file, owners to appDataFolder
+  if(familyRole==='member'&&sharedFileId){
+    driveFileId=sharedFileId;
+  }
+  if(!driveFileId)return;
   setSyncStatus('syncing','Saving…');
   try{
     const payload=JSON.stringify({categories,transactions,accounts,budgetName,savedAt:new Date().toISOString()});
@@ -1875,6 +1895,8 @@ async function saveToDrive(){
     setSyncStatus('synced','Saved · '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}));
     lastSyncTime=new Date();
     hasPendingChanges=false;
+    // Keep shared family file in sync if one exists
+    if(familyRole==='owner')syncSharedFile();
   }catch(e){setSyncStatus('error','Save failed — retrying');setTimeout(saveToDrive,5000);}
 }
 function scheduleSave(){
@@ -3439,32 +3461,74 @@ function applyPendingJoin(){
   }
 }
 
-function generateInviteLink(){
-  const fileId=driveFileId||localStorage.getItem('gatos_owner_file_id')||'';
-  if(!fileId){toast('Please wait for the budget to finish loading first','error');return;}
-  // Make the file readable by anyone with the link
-  shareFilePublicly(fileId).then(()=>{
-    const link=`https://nandourgiles.github.io/gatosbudget/#join=${fileId}`;
+async function generateInviteLink(){
+  if(!accessToken){toast('Sign in first','error');return;}
+  document.getElementById('family-copy-btn') && (document.getElementById('family-copy-btn').textContent='Creating shared file…');
+
+  try{
+    // Step 1: Get current budget data
+    const payload=JSON.stringify({categories,transactions,accounts,budgetName,savedAt:new Date().toISOString(),isSharedFamily:true});
+
+    // Step 2: Check if we already have a shared file ID
+    let shareId=localStorage.getItem('gatos_shared_drive_file_id');
+
+    if(shareId){
+      // Update existing shared file
+      const boundary='zb_boundary';
+      const body=`--${boundary}\r\nContent-Type: application/json\r\n\r\n${JSON.stringify({name:'gatosbudget-family.json'})}\r\n--${boundary}\r\nContent-Type: application/json\r\n\r\n${payload}\r\n--${boundary}--`;
+      await fetch(`https://www.googleapis.com/upload/drive/v3/files/${shareId}?uploadType=multipart`,{
+        method:'PATCH',
+        headers:{'Authorization':'Bearer '+accessToken,'Content-Type':`multipart/related; boundary=${boundary}`},
+        body
+      });
+    } else {
+      // Step 3: Create a new file in regular Drive (not appDataFolder — so it can be shared)
+      const boundary='zb_boundary';
+      const meta=JSON.stringify({name:'gatosbudget-family.json'});
+      const body=`--${boundary}\r\nContent-Type: application/json\r\n\r\n${meta}\r\n--${boundary}\r\nContent-Type: application/json\r\n\r\n${payload}\r\n--${boundary}--`;
+      const cr=await fetch(`https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart`,{
+        method:'POST',
+        headers:{'Authorization':'Bearer '+accessToken,'Content-Type':`multipart/related; boundary=${boundary}`},
+        body
+      });
+      const cj=await cr.json();
+      shareId=cj.id;
+      if(!shareId)throw new Error('Could not create shared file');
+      localStorage.setItem('gatos_shared_drive_file_id',shareId);
+    }
+
+    // Step 4: Make it writable by anyone with the link
+    await fetch(`https://www.googleapis.com/drive/v3/files/${shareId}/permissions`,{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'},
+      body:JSON.stringify({role:'writer',type:'anyone'})
+    });
+
+    // Step 5: Show the invite link with the shared file ID
+    const link=`https://nandourgiles.github.io/gatosbudget/#join=${shareId}`;
     localStorage.setItem('gatos_invite_link',link);
     document.getElementById('family-invite-link').value=link;
     document.getElementById('family-link-wrap').style.display='';
-    toast('Invite link ready — copy and send it!');
-  }).catch(()=>{
-    // Even if sharing API fails, show the link — member will need read access
-    const link=`https://nandourgiles.github.io/gatosbudget/#join=${fileId}`;
-    localStorage.setItem('gatos_invite_link',link);
-    document.getElementById('family-invite-link').value=link;
-    document.getElementById('family-link-wrap').style.display='';
-  });
+    toast('✓ Invite link ready — copy and send to family!');
+
+  }catch(e){
+    toast('Error creating invite: '+e.message,'error');
+    console.error(e);
+  }
 }
 
-async function shareFilePublicly(fileId){
-  // Share the Drive file so family members can read/write it
-  await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/permissions`,{
-    method:'POST',
-    headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'},
-    body:JSON.stringify({role:'writer',type:'anyone'})
-  });
+async function syncSharedFile(){
+  // Called every time owner saves — keeps shared file in sync
+  const shareId=localStorage.getItem('gatos_shared_drive_file_id');
+  if(!shareId||!accessToken)return;
+  const payload=JSON.stringify({categories,transactions,accounts,budgetName,savedAt:new Date().toISOString(),isSharedFamily:true});
+  const boundary='zb_boundary';
+  const body=`--${boundary}\r\nContent-Type: application/json\r\n\r\n${JSON.stringify({name:'gatosbudget-family.json'})}\r\n--${boundary}\r\nContent-Type: application/json\r\n\r\n${payload}\r\n--${boundary}--`;
+  await fetch(`https://www.googleapis.com/upload/drive/v3/files/${shareId}?uploadType=multipart`,{
+    method:'PATCH',
+    headers:{'Authorization':'Bearer '+accessToken,'Content-Type':`multipart/related; boundary=${boundary}`},
+    body
+  }).catch(()=>{});// Silent fail — not critical
 }
 
 function copyInviteLink(){
