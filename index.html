@@ -1919,14 +1919,64 @@ setInterval(async()=>{
 const fmt=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n||0);
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2);
 
+// Returns all months that exist in transactions/assignments, sorted ascending
+function allBudgetMonths(){
+  const ms=new Set();
+  transactions.forEach(t=>{if(t.month)ms.add(t.month);});
+  categories.forEach(c=>Object.keys(c.assigned||{}).forEach(m=>ms.add(m)));
+  return[...ms].sort();
+}
+
+// Carryover for ATB: sum of (income - assigned) for all months BEFORE currentMonth
+function calcATBCarryover(){
+  const months=allBudgetMonths().filter(m=>m<currentMonth);
+  let carryover=0;
+  months.forEach(m=>{
+    const inc=transactions.filter(t=>t.type==='income'&&t.month===m).reduce((s,t)=>s+t.amount,0);
+    const asgn=categories.reduce((s,c)=>s+((c.assigned||{})[m]||0),0);
+    carryover+=inc-asgn;
+  });
+  return carryover;
+}
+
+// Carryover for a category: sum of (assigned - spent) for all months BEFORE the given month
+function calcCatCarryover(catId, upToMonth){
+  const months=allBudgetMonths().filter(m=>m<upToMonth);
+  let carry=0;
+  months.forEach(m=>{
+    const asgn=(categories.find(c=>c.id===catId)?.assigned||{})[m]||0;
+    const spent=transactions.filter(t=>t.type==='expense'&&t.categoryId===catId&&t.month===m).reduce((s,t)=>s+t.amount,0);
+    carry+=asgn-spent;
+  });
+  // Never carry negative — overspending in past months doesn't steal from future budget
+  return Math.max(0,carry);
+}
+
 function calcStats(){
   const mt=transactions.filter(t=>t.month===currentMonth);
   const totalIncome=mt.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
   const totalAssigned=categories.reduce((s,c)=>s+((c.assigned||{})[currentMonth]||0),0);
   const totalActivity=mt.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
-  return{totalIncome,totalAssigned,totalActivity,atb:totalIncome-totalAssigned};
+  // Include carryover from previous months in ATB
+  const carryover=calcATBCarryover();
+  const atb=(totalIncome+carryover)-totalAssigned;
+  return{totalIncome,totalAssigned,totalActivity,atb,carryover};
 }
-function calcCatActivity(catId,month){const mo=month||currentMonth;return transactions.filter(t=>t.type==='expense'&&t.categoryId===catId&&t.month===mo).reduce((s,t)=>s+t.amount,0);}
+
+function calcCatActivity(catId,month){
+  const mo=month||currentMonth;
+  return transactions.filter(t=>t.type==='expense'&&t.categoryId===catId&&t.month===mo).reduce((s,t)=>s+t.amount,0);
+}
+
+// Category available = this month's assigned + carryover from prior months - this month's spending
+function calcCatAvailable(catId, month){
+  const mo=month||currentMonth;
+  const cat=categories.find(c=>c.id===catId);
+  const assigned=(cat?.assigned||{})[mo]||0;
+  const spent=calcCatActivity(catId,mo);
+  const carry=calcCatCarryover(catId,mo);
+  return assigned+carry-spent;
+}
 function acctBalance(acctId){
   const acct=accounts.find(a=>a.id===acctId);
   const start=acct?acct.startingBalance||0:0;
@@ -1950,18 +2000,20 @@ function formatDate(d){if(!d)return'';const[y,m,day]=d.split('-');return`${+m}/$
 function renderAll(){updateLogoName();renderATB();renderCategories();renderCategorySelect();renderAccountSelect();renderSidebar();renderRecentTxns();renderAllTxns();renderMonthLabel();if(currentAcctId)renderAccountView(currentAcctId);if(currentCatId&&document.getElementById('view-category').style.display!=='none')renderCategoryView();}
 
 function renderATB(){
-  const{totalIncome,totalAssigned,totalActivity,atb}=calcStats();
+  const{totalIncome,totalAssigned,totalActivity,atb,carryover}=calcStats();
   const el=document.getElementById('atb-amount');
   el.textContent=fmt(atb);el.className='atb-amount '+(atb>0?'positive':atb<0?'negative':'zero');
   const sub=document.getElementById('atb-sub');
-  if(atb>0)sub.textContent='Ready to assign to categories';
+  if(atb>0&&carryover>0)sub.textContent=`Includes ${fmt(carryover)} carried forward from previous months`;
+  else if(atb>0)sub.textContent='Ready to assign to categories';
   else if(atb<0)sub.textContent='Over-budgeted — reduce assigned amounts';
-  else if(totalIncome===0)sub.textContent='Add income to get started';
+  else if(totalIncome===0&&carryover===0)sub.textContent='Add income to get started';
   else sub.textContent='Perfectly zero-based! ✓';
   document.getElementById('stat-income').textContent=fmt(totalIncome);
   document.getElementById('stat-assigned').textContent=fmt(totalAssigned);
   document.getElementById('stat-activity').textContent=fmt(totalActivity);
-  const pct=totalIncome>0?Math.min(100,(totalAssigned/totalIncome)*100):0;
+  const totalAvailable=totalIncome+carryover;
+  const pct=totalAvailable>0?Math.min(100,(totalAssigned/totalAvailable)*100):0;
   const meter=document.getElementById('atb-meter');
   meter.style.width=pct+'%';meter.style.background=atb<0?'var(--coral)':'var(--mint)';
   document.getElementById('atb-pct-label').textContent=Math.round(pct)+'% assigned';
@@ -1987,7 +2039,8 @@ function renderCategories(){
     </td></tr>`;
     cats.forEach(cat=>{
       const assigned=(cat.assigned||{})[currentMonth]||0;
-      const activity=calcCatActivity(cat.id);const available=assigned-activity;
+      const activity=calcCatActivity(cat.id);
+      const available=calcCatAvailable(cat.id,currentMonth);
       const ac=available>0?'avail-pos':available<0?'avail-neg':'avail-zero';
 
       // Goal rendering
@@ -2282,7 +2335,7 @@ function renderCategoryView(){
   const assigned=(cat.assigned||{})[catViewMonth]||0;
   const allCatTxns=transactions.filter(t=>t.type==='expense'&&t.categoryId===currentCatId&&t.month===catViewMonth);
   const activity=allCatTxns.reduce((s,t)=>s+t.amount,0);
-  const available=assigned-activity;
+  const available=calcCatAvailable(currentCatId,catViewMonth);
 
   let list=[...allCatTxns];
   if(q) list=list.filter(t=>(t.payee||'').toLowerCase().includes(q)||(t.memo||'').toLowerCase().includes(q)||getAcctName(t.accountId).toLowerCase().includes(q));
@@ -2868,7 +2921,7 @@ function renderAssignPanel(){
     cats.forEach(cat=>{
       const assigned=(cat.assigned||{})[assignMonth]||0;
       const activity=calcCatActivity(cat.id,assignMonth);
-      const available=assigned-activity;
+      const available=calcCatAvailable(cat.id,assignMonth);
       const availCls=available>0?'color:#0a6b4e':available<0?'color:var(--coral)':'color:var(--text-muted)';
 
       html+=`<div style="padding:10px 16px;border-bottom:.5px solid var(--border);display:flex;align-items:center;gap:12px;" id="assign-row-${cat.id}">
