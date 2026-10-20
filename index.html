@@ -3868,33 +3868,41 @@ function bcsvDetectFormat(headers){
 
 function bcsvParseDate(str){
   if(!str)return null;
-  str=str.trim().replace(/["']/g,'');
-  // Try various date formats
-  const fmts=[
-    /^(\d{4})-(\d{1,2})-(\d{1,2})$/,       // 2026-07-01 (ISO)
-    /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/,      // 07/01/2026 or 1/7/2026
-    /^(\d{1,2})-(\d{1,2})-(\d{4})$/,        // 07-01-2026
-    /^(\d{4})\/(\d{1,2})\/(\d{1,2})$/,      // 2026/07/01
-    /^(\d{1,2})\/(\d{1,2})\/(\d{2})$/,      // 07/01/26
-  ];
-  for(const fmt of fmts){
-    const m=str.match(fmt);
-    if(m){
-      let y=parseInt(m[1]),mo=parseInt(m[2]),d=parseInt(m[3]);
-      // If year looks like day (<=31), it's MM/DD/YYYY or DD/MM/YYYY
-      if(y<=31){[y,d]=[d,y];}
-      // 2-digit year
-      if(y<100)y+=2000;
-      // Validate
-      if(y>=2000&&y<=2100&&mo>=1&&mo<=12&&d>=1&&d<=31){
-        return `${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-      }
-    }
-  }
-  // Try natural date strings like "Jul 01, 2026"
-  const d=new Date(str);
-  if(!isNaN(d.getTime())){
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  str=str.trim().replace(/["']/g,'').replace(/\s+/g,' ');
+
+  let y,mo,d;
+
+  // 1. ISO: 2026-10-20
+  let m=str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if(m){y=+m[1];mo=+m[2];d=+m[3];}
+
+  // 2. MM/DD/YYYY — PC Financial, US banks (month is FIRST)
+  if(!y){m=str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if(m){mo=+m[1];d=+m[2];y=+m[3];}}
+
+  // 3. MM-DD-YYYY
+  if(!y){m=str.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+    if(m){mo=+m[1];d=+m[2];y=+m[3];}}
+
+  // 4. YYYY/MM/DD
+  if(!y){m=str.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
+    if(m){y=+m[1];mo=+m[2];d=+m[3];}}
+
+  // 5. MM/DD/YY short year
+  if(!y){m=str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2})$/);
+    if(m){mo=+m[1];d=+m[2];y=+m[3]+2000;}}
+
+  // 6. DD-Mon-YYYY e.g. 20-Oct-2026
+  if(!y){m=str.match(/^(\d{1,2})-([A-Za-z]{3})-(\d{4})$/);
+    if(m){const months={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+      d=+m[1];mo=months[m[2].toLowerCase()]||0;y=+m[3];}}
+
+  // 7. Natural: "Oct 20, 2026" or "October 20, 2026"
+  if(!y){const nd=new Date(str);
+    if(!isNaN(nd.getTime())){y=nd.getFullYear();mo=nd.getMonth()+1;d=nd.getDate();}}
+
+  if(y&&mo&&d&&y>=2000&&y<=2100&&mo>=1&&mo<=12&&d>=1&&d<=31){
+    return `${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
   }
   return null;
 }
