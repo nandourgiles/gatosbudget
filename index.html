@@ -2275,14 +2275,21 @@ function renderAccountView(acctId){
 // ── SORT HELPERS ──────────────────────────────────────────────────
 function sortTxns(list,col,dir,prefix){
   const d=dir==='asc'?1:-1;
+  // Remember the incoming (chronological) position so ties are always resolved the same way
+  const pos=new Map(list.map((t,i)=>[t.id,i]));
   return list.sort((a,b)=>{
-    if(col==='date') return d*((a.date||'').localeCompare(b.date||''));
-    if(col==='payee') return d*(a.payee||'').localeCompare(b.payee||'');
-    if(col==='amount'||col==='outflow') return d*(a.amount-b.amount);
-    if(col==='inflow') return d*(a.amount-b.amount);
-    if(col==='balance') return d*((a._ts||0)-(b._ts||0));
-    if(col==='cleared') return d*((a.cleared?1:0)-(b.cleared?1:0));
-    return 0;
+    let c=0;
+    if(col==='date') c=(a.date||'').localeCompare(b.date||'');
+    else if(col==='payee') c=(a.payee||'').localeCompare(b.payee||'');
+    else if(col==='amount'||col==='outflow'||col==='inflow') c=a.amount-b.amount;
+    else if(col==='balance') c=(a._ts||0)-(b._ts||0);
+    else if(col==='cleared') c=(a.cleared?1:0)-(b.cleared?1:0);
+    if(c!==0) return d*c;
+    // Tie-break: same-day transactions follow entry order, in the same direction as the sort.
+    // This keeps the Balance column consistent (newest-first shows the latest balance on top).
+    const ts=(a._ts||0)-(b._ts||0);
+    if(ts!==0) return d*ts;
+    return d*((pos.get(a.id)||0)-(pos.get(b.id)||0));
   });
 }
 
