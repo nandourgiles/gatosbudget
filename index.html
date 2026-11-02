@@ -8,8 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Gato's Budget">
 <meta name="theme-color" content="#1e3a2f">
-
-  <title>Gato's Budget</title>
+<title>Gato's Budget</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.0.0/dist/tabler-icons.min.css">
 <style>
   :root {
@@ -298,6 +297,8 @@
   .avail-pos{background:var(--mint-light);color:#0a6b4e;}
   .avail-neg{background:var(--coral-light);color:#b03a2b;}
   .avail-zero{background:#f0f3f7;color:var(--slate);}
+  .avail-pill.clickable{cursor:pointer;transition:box-shadow .12s,filter .12s;}
+  .avail-pill.clickable:hover{filter:brightness(.96);box-shadow:0 0 0 2px rgba(26,170,124,.3);}
   .cat-actions{display:flex;gap:4px;justify-content:flex-end;}
   .icon-btn{background:none;border:none;color:var(--text-muted);cursor:pointer;padding:2px;border-radius:4px;font-size:14px;transition:color .15s,background .15s;display:flex;align-items:center;}
   .icon-btn:hover{color:var(--text-primary);background:var(--surface);}
@@ -1678,6 +1679,31 @@
   </div>
 </div>
 
+<!-- MOVE MONEY MODAL -->
+<div class="modal-overlay" id="move-modal">
+  <div class="modal" style="width:440px;max-width:calc(100vw - 2rem);">
+    <h3 style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><i class="ti ti-arrows-exchange" style="color:var(--mint);font-size:20px;"></i> Move money</h3>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;line-height:1.6;">Move budgeted money between categories for <strong id="move-month"></strong>. Choose <em>Ready to Assign</em> to return it to the pool.</p>
+    <div class="field" style="margin-bottom:12px;">
+      <label>From</label>
+      <select id="move-from" onchange="moveRefresh()" style="width:100%;padding:9px 11px;border:.5px solid var(--border);border-radius:7px;font-size:13px;background:var(--surface);outline:none;"></select>
+    </div>
+    <div class="field" style="margin-bottom:12px;">
+      <label>To</label>
+      <select id="move-to" onchange="moveRefresh()" style="width:100%;padding:9px 11px;border:.5px solid var(--border);border-radius:7px;font-size:13px;background:var(--surface);outline:none;"></select>
+    </div>
+    <div class="field" style="margin-bottom:10px;">
+      <label>Amount</label>
+      <input type="number" id="move-amount" min="0" step="0.01" oninput="moveRefresh(true)" onkeydown="if(event.key==='Enter')confirmMove()" style="width:100%;padding:9px 11px;border:.5px solid var(--border);border-radius:7px;font-size:14px;font-family:var(--mono);background:var(--surface);outline:none;">
+    </div>
+    <div id="move-hint" style="font-size:12px;color:var(--text-secondary);background:var(--surface);border-radius:8px;padding:9px 12px;line-height:1.6;margin-bottom:4px;"></div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeMoveModal()">Cancel</button>
+      <button onclick="confirmMove()" style="flex:1;padding:10px;background:linear-gradient(135deg,var(--navy),#25594a);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;"><i class="ti ti-arrows-exchange"></i> Move money</button>
+    </div>
+  </div>
+</div>
+
 <!-- ATB STATS DRAWER -->
 <div id="atb-drawer-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:300;" onclick="closeAtbDrawer()"></div>
 <div id="atb-drawer" style="position:fixed;top:0;right:0;width:440px;max-width:96vw;height:100%;background:var(--surface-card);box-shadow:-4px 0 32px rgba(0,0,0,.15);z-index:301;display:none;flex-direction:column;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);">
@@ -2079,7 +2105,7 @@ function renderCategories(){
         <td><i class="ti ti-grip-vertical cat-drag-handle" title="Drag to reorder"></i></td>
         <td><span class="cat-dot" style="background:${cat.color||'#888'}"></span><span class="cat-name" title="Click to rename" style="cursor:pointer;border-bottom:1px dotted var(--border);" onclick="startRenameCat('${cat.id}',this)">${cat.name}</span></td>
         <td><input class="assigned-edit mono" type="number" step="0.01" value="${assigned.toFixed(2)}" onchange="updateAssigned('${cat.id}',this.value)" onblur="updateAssigned('${cat.id}',this.value)"></td>
-        <td class="mono ${activity>0?'negative-val':''}" style="${activity>0?'cursor:pointer;text-decoration:underline dotted;':''}" onclick="${activity>0?`showCategoryView('${cat.id}')`:''}" title="${activity>0?'Click to see transactions':''}">${activity>0?'-':''}${fmt(activity)}</td>        <td><span class="avail-pill ${ac}">${fmt(available)}</span></td>
+        <td class="mono ${activity>0?'negative-val':''}" style="${activity>0?'cursor:pointer;text-decoration:underline dotted;':''}" onclick="${activity>0?`showCategoryView('${cat.id}')`:''}" title="${activity>0?'Click to see transactions':''}">${activity>0?'-':''}${fmt(activity)}</td>        <td><span class="avail-pill clickable ${ac}" title="Click to move money" onclick="openMoveMoney('${cat.id}')">${fmt(available)}</span></td>
         <td>${goalCell}</td>
         <td><div class="cat-actions"><button class="icon-btn delete" onclick="deleteCategory('${cat.id}')"><i class="ti ti-trash"></i></button></div></td>
       </tr>`;
@@ -3672,6 +3698,128 @@ function leaveFamily(){
 
 // Wire up family modal backdrop
 document.getElementById('family-modal').addEventListener('click',e=>{if(e.target===document.getElementById('family-modal'))closeFamilyModal();});
+
+// ── MOVE MONEY BETWEEN CATEGORIES ─────────────────────────────────
+const MOVE_RTA='__rta__';
+const round2=n=>Math.round(n*100)/100;
+
+// Decide sensible defaults based on which Available pill was clicked
+function pickMoveDefaults(catId,month){
+  const avs=categories.map(c=>({c,a:calcCatAvailable(c.id,month)}));
+  const clicked=avs.find(x=>x.c.id===catId);
+  if(!clicked)return{error:'Category not found.'};
+  if(clicked.a>0.005){
+    // Has money: send it to the most overbudget category, else back to Ready to Assign
+    const over=avs.filter(x=>x.a<-0.005&&x.c.id!==catId).sort((p,q)=>p.a-q.a)[0];
+    return{from:catId,to:over?over.c.id:MOVE_RTA,amount:round2(over?Math.min(clicked.a,-over.a):clicked.a)};
+  }
+  if(clicked.a<-0.005){
+    // Overbudget: cover it from the category with the most money left
+    const src=avs.filter(x=>x.a>0.005&&x.c.id!==catId).sort((p,q)=>q.a-p.a)[0];
+    if(!src)return{error:'No other category has money available to move.'};
+    return{from:src.c.id,to:catId,amount:round2(Math.min(src.a,-clicked.a))};
+  }
+  return{error:'This category has nothing available to move.'};
+}
+
+// Moving = lower the source's assigned amount and raise the target's by the same amount
+function applyMove(fromId,toId,amount,month){
+  const from=categories.find(c=>c.id===fromId);
+  if(!from||!(amount>0))return false;
+  if(!from.assigned)from.assigned={};
+  from.assigned[month]=round2((from.assigned[month]||0)-amount);
+  if(toId!==MOVE_RTA){
+    const to=categories.find(c=>c.id===toId);
+    if(!to)return false;
+    if(!to.assigned)to.assigned={};
+    to.assigned[month]=round2((to.assigned[month]||0)+amount);
+  }
+  return true;
+}
+
+function openMoveMoney(catId){
+  const month=currentMonth;
+  const d=pickMoveDefaults(catId,month);
+  if(d.error){toast(d.error,'error');return;}
+  const[y,m]=month.split('-');
+  document.getElementById('move-month').textContent=new Date(+y,+m-1,1).toLocaleDateString('en-US',{month:'long',year:'numeric'});
+  moveBuildFrom(d.from);
+  moveBuildTo(d.to,d.from);
+  document.getElementById('move-amount').value=d.amount.toFixed(2);
+  moveRefresh(true);
+  document.getElementById('move-modal').classList.add('open');
+  setTimeout(()=>{const a=document.getElementById('move-amount');a.focus();a.select();},60);
+}
+function closeMoveModal(){document.getElementById('move-modal').classList.remove('open');}
+
+function moveBuildFrom(selected){
+  const sel=document.getElementById('move-from');
+  sel.innerHTML='';
+  categories.forEach(c=>{
+    const a=calcCatAvailable(c.id,currentMonth);
+    if(a<=0.005&&c.id!==selected)return;
+    const o=document.createElement('option');
+    o.value=c.id;o.textContent=`${c.name} — ${fmt(a)} available`;
+    sel.appendChild(o);
+  });
+  sel.value=selected;
+}
+function moveBuildTo(selected,fromId){
+  const sel=document.getElementById('move-to');
+  sel.innerHTML='';
+  const rta=document.createElement('option');
+  rta.value=MOVE_RTA;rta.textContent='Ready to Assign (Available to Budget)';
+  sel.appendChild(rta);
+  // Overbudget categories first so they are easy to find
+  const list=categories.filter(c=>c.id!==fromId).map(c=>({c,a:calcCatAvailable(c.id,currentMonth)}))
+    .sort((p,q)=>(p.a<0?0:1)-(q.a<0?0:1)||p.a-q.a);
+  list.forEach(({c,a})=>{
+    const o=document.createElement('option');
+    o.value=c.id;o.textContent=a<-0.005?`${c.name} — ${fmt(a)} overbudget`:`${c.name} — ${fmt(a)} available`;
+    sel.appendChild(o);
+  });
+  sel.value=selected;
+}
+
+function moveRefresh(amountOnly){
+  const from=document.getElementById('move-from').value;
+  if(!amountOnly){
+    // Keep "To" valid when "From" changes
+    const prevTo=document.getElementById('move-to').value;
+    moveBuildTo(prevTo===from?MOVE_RTA:prevTo,from);
+  }
+  const to=document.getElementById('move-to').value;
+  const amt=parseFloat(document.getElementById('move-amount').value)||0;
+  const fc=categories.find(c=>c.id===from);
+  const fa=calcCatAvailable(from,currentMonth);
+  let txt=`${fc?fc.name:'Source'} will go from ${fmt(fa)} to ${fmt(fa-amt)}`;
+  if(to===MOVE_RTA){
+    txt+=` · Ready to Assign goes up by ${fmt(amt)}.`;
+  }else{
+    const tc=categories.find(c=>c.id===to);
+    const ta=calcCatAvailable(to,currentMonth);
+    txt+=` · ${tc?tc.name:'Target'} will go from ${fmt(ta)} to ${fmt(ta+amt)}.`;
+  }
+  const hint=document.getElementById('move-hint');
+  hint.textContent=txt;
+  hint.style.color=amt>fa+0.005?'var(--coral)':'var(--text-secondary)';
+}
+
+function confirmMove(){
+  const from=document.getElementById('move-from').value;
+  const to=document.getElementById('move-to').value;
+  const amount=round2(parseFloat(document.getElementById('move-amount').value)||0);
+  if(!(amount>0)){toast('Enter an amount greater than 0','error');return;}
+  if(amount>calcCatAvailable(from,currentMonth)+0.005){toast('That is more than the category has available','error');return;}
+  if(from===to){toast('Choose a different destination','error');return;}
+  if(!applyMove(from,to,amount,currentMonth)){toast('Could not move money','error');return;}
+  const fn=categories.find(c=>c.id===from)?.name||'category';
+  const tn=to===MOVE_RTA?'Ready to Assign':(categories.find(c=>c.id===to)?.name||'category');
+  closeMoveModal();
+  renderAll();scheduleSave();
+  toast(`Moved ${fmt(amount)} from ${fn} to ${tn}`);
+}
+document.getElementById('move-modal').addEventListener('click',e=>{if(e.target===document.getElementById('move-modal'))closeMoveModal();});
 
 // ── ATB STATS DRAWER ──────────────────────────────────────────────
 function openAtbDrawer(type){
