@@ -646,6 +646,7 @@
           <div class="atb-label">Available to Budget</div>
           <div class="atb-amount zero" id="atb-amount" onclick="openAssignPanel()" title="Click to assign money to categories" style="cursor:pointer;text-decoration:underline dotted;text-underline-offset:4px;transition:opacity .15s;" onmouseenter="this.style.opacity='.8'" onmouseleave="this.style.opacity='1'">$0.00</div>
           <div class="atb-sub" id="atb-sub" style="cursor:pointer;" onclick="openAssignPanel()">Add income to get started</div>
+          <div id="atb-advice" style="display:none;"></div>
         </div>
         <div style="flex:1">
           <div class="atb-meter-labels"><span>Unassigned</span><span id="atb-pct-label">0% assigned</span></div>
@@ -1966,17 +1967,27 @@ function calcATBCarryover(){
   return carryover;
 }
 
-// Carryover for a category: sum of (assigned - spent) for all months BEFORE the given month
+// First month in which any category has money assigned (months before this are pre-budget history)
+function budgetStartMonth(){
+  let first=null;
+  categories.forEach(c=>Object.entries(c.assigned||{}).forEach(([m,v])=>{if(v&&(first===null||m<first))first=m;}));
+  return first;
+}
+
+// Carryover for a category: sum of (assigned - spent) for all budgeted months BEFORE the given month.
+// Positive = unspent money rolls forward. Negative = overspending rolls forward and must be funded.
 function calcCatCarryover(catId, upToMonth){
-  const months=allBudgetMonths().filter(m=>m<upToMonth);
+  const start=budgetStartMonth();
+  if(!start)return 0;
+  const cat=categories.find(c=>c.id===catId);
   let carry=0;
-  months.forEach(m=>{
-    const asgn=(categories.find(c=>c.id===catId)?.assigned||{})[m]||0;
+  allBudgetMonths().filter(m=>m<upToMonth&&m>=start).forEach(m=>{
+    const asgn=(cat?.assigned||{})[m]||0;
     const spent=transactions.filter(t=>t.type==='expense'&&t.categoryId===catId&&t.month===m).reduce((s,t)=>s+t.amount,0);
     carry+=asgn-spent;
   });
-  // Never carry negative — overspending in past months doesn't steal from future budget
-  return Math.max(0,carry);
+  const v=Math.round(carry*100)/100;
+  return v===0?0:v;
 }
 
 function calcStats(){
@@ -2002,7 +2013,14 @@ function calcCatAvailable(catId, month){
   const assigned=(cat?.assigned||{})[mo]||0;
   const spent=calcCatActivity(catId,mo);
   const carry=calcCatCarryover(catId,mo);
-  return assigned+carry-spent;
+  const v=Math.round((assigned+carry-spent)*100)/100;
+  return v===0?0:v;   // avoids "-$0.00" from floating-point noise
+}
+
+// Categories that were overspent in a previous month and are still short this month
+function carryShortfalls(month){
+  return categories.map(c=>({c,carry:calcCatCarryover(c.id,month),avail:calcCatAvailable(c.id,month)}))
+    .filter(x=>x.carry<-0.005&&x.avail<-0.005).sort((a,b)=>a.avail-b.avail);
 }
 function acctBalance(acctId){
   const acct=accounts.find(a=>a.id===acctId);
@@ -2044,6 +2062,24 @@ function renderATB(){
   const meter=document.getElementById('atb-meter');
   meter.style.width=pct+'%';meter.style.background=atb<0?'var(--coral)':'var(--mint)';
   document.getElementById('atb-pct-label').textContent=Math.round(pct)+'% assigned';
+  renderCarryAdvice(atb);
+}
+
+function renderCarryAdvice(atb){
+  const el=document.getElementById('atb-advice');
+  if(!el)return;
+  const list=carryShortfalls(currentMonth);
+  if(!list.length){el.style.display='none';el.innerHTML='';return;}
+  const esc=t=>String(t).replace(/[&<>"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+  const need=list.reduce((s,x)=>s-x.avail,0);
+  const names=list.slice(0,3).map(x=>`<strong>${esc(x.c.name)}</strong> (${fmt(x.avail)})`).join(', ')+(list.length>3?` and ${list.length-3} more`:'');
+  const cover=atb>=need-0.005
+    ?`You have enough to cover it — click to assign.`
+    :`You need ${fmt(need)} but have ${fmt(Math.max(0,atb))} to assign — you may also need to move money from other categories.`;
+  el.style.cssText='display:block;margin-top:10px;max-width:420px;padding:9px 12px;border-radius:9px;background:rgba(255,179,170,.14);border:.5px solid rgba(255,179,170,.4);color:#ffd9d4;font-size:12px;line-height:1.55;cursor:pointer;';
+  el.title='Click to open Assign Money';
+  el.onclick=openAssignPanel;
+  el.innerHTML=`<i class="ti ti-alert-triangle" style="margin-right:5px;"></i>Prioritise funding ${names} to get back on track. They were overspent in a previous month and carried over. ${cover}`;
 }
 
 function renderMonthLabel(){
@@ -2069,6 +2105,8 @@ function renderCategories(){
       const activity=calcCatActivity(cat.id);
       const available=calcCatAvailable(cat.id,currentMonth);
       const ac=available>0?'avail-pos':available<0?'avail-neg':'avail-zero';
+      const carryIn=calcCatCarryover(cat.id,currentMonth);
+      const carryNote=Math.abs(carryIn)>0.005?`<div style="font-size:10px;margin-top:3px;color:${carryIn<0?'var(--coral)':'var(--text-muted)'};white-space:nowrap;">incl. ${fmt(carryIn)} carried over</div>`:'';
 
       // Goal rendering
       let goalCell='<button class="goal-edit-btn" onclick="openGoalModal(\''+cat.id+'\')" title="Set funding goal"><i class="ti ti-target"></i></button>';
@@ -2105,7 +2143,7 @@ function renderCategories(){
         <td><i class="ti ti-grip-vertical cat-drag-handle" title="Drag to reorder"></i></td>
         <td><span class="cat-dot" style="background:${cat.color||'#888'}"></span><span class="cat-name" title="Click to rename" style="cursor:pointer;border-bottom:1px dotted var(--border);" onclick="startRenameCat('${cat.id}',this)">${cat.name}</span></td>
         <td><input class="assigned-edit mono" type="number" step="0.01" value="${assigned.toFixed(2)}" onchange="updateAssigned('${cat.id}',this.value)" onblur="updateAssigned('${cat.id}',this.value)"></td>
-        <td class="mono ${activity>0?'negative-val':''}" style="${activity>0?'cursor:pointer;text-decoration:underline dotted;':''}" onclick="${activity>0?`showCategoryView('${cat.id}')`:''}" title="${activity>0?'Click to see transactions':''}">${activity>0?'-':''}${fmt(activity)}</td>        <td><span class="avail-pill clickable ${ac}" title="Click to move money" onclick="openMoveMoney('${cat.id}')">${fmt(available)}</span></td>
+        <td class="mono ${activity>0?'negative-val':''}" style="${activity>0?'cursor:pointer;text-decoration:underline dotted;':''}" onclick="${activity>0?`showCategoryView('${cat.id}')`:''}" title="${activity>0?'Click to see transactions':''}">${activity>0?'-':''}${fmt(activity)}</td>        <td><span class="avail-pill clickable ${ac}" title="Click to move money" onclick="openMoveMoney('${cat.id}')">${fmt(available)}</span>${carryNote}</td>
         <td>${goalCell}</td>
         <td><div class="cat-actions"><button class="icon-btn delete" onclick="deleteCategory('${cat.id}')"><i class="ti ti-trash"></i></button></div></td>
       </tr>`;
